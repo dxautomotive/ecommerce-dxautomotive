@@ -9,7 +9,6 @@ import AnnouncementBar from "@modules/layout/components/announcement-bar"
 import CartButton from "@modules/layout/components/cart-button"
 import SearchInput from "@modules/layout/components/search-input"
 import SideMenu from "@modules/layout/components/side-menu"
-import SmartHideWrapper from "@modules/layout/components/smart-hide-wrapper"
 
 const PRIMARY_LINKS = [
   { label: "Multimídia", href: "/categories/multimidia" },
@@ -27,9 +26,9 @@ export default async function Nav() {
   ])
 
   return (
-    <SmartHideWrapper>
+    <div className="relative inset-x-0 z-50">
       <AnnouncementBar />
-      <header className="bg-brand-bg/95 backdrop-blur border-b border-brand-border">
+      <header className="bg-brand-bg border-b border-brand-border">
         <div className="content-container">
           {/* Linha principal: Menu mobile · Logo · Busca · Conta · Carrinho */}
           <div className="flex items-center justify-between gap-4 py-3 small:py-4">
@@ -142,7 +141,7 @@ export default async function Nav() {
           </div>
         </div>
       </header>
-    </SmartHideWrapper>
+    </div>
   )
 }
 
