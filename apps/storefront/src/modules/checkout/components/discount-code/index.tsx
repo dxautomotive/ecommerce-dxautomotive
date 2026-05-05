@@ -54,40 +54,36 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
   }
 
   return (
-    <div className="w-full bg-white flex flex-col">
-      <div className="txt-medium">
-        <form action={(a) => addPromotionCode(a)} className="w-full mb-5">
-          <Label className="flex gap-x-1 my-2 items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              type="button"
-              className="txt-medium text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
-              data-testid="add-discount-button"
-            >
-              Add Promotion Code(s)
-            </button>
-
-            {/* <Tooltip content="You can add multiple promotion codes">
-              <InformationCircleSolid color="var(--fg-muted)" />
-            </Tooltip> */}
-          </Label>
+    <div className="w-full flex flex-col">
+      <div className="text-sm">
+        <form action={(a) => addPromotionCode(a)} className="w-full mb-3">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            type="button"
+            className="text-brand-primary hover:text-brand-primary-hover text-sm font-semibold"
+            data-testid="add-discount-button"
+          >
+            {isOpen ? "Cancelar" : "Tem cupom de desconto?"}
+          </button>
 
           {isOpen && (
-            <>
-              <div className="flex w-full gap-x-2">
-                <Input
-                  className="size-full"
+            <div className="mt-3 flex flex-col gap-2">
+              <div className="flex w-full gap-2">
+                <input
+                  className="flex-1 bg-brand-bg border border-brand-border focus:border-brand-primary text-brand-text placeholder:text-brand-muted text-sm rounded px-3 py-2 outline-none transition-colors uppercase"
                   id="promotion-input"
                   name="code"
                   type="text"
+                  placeholder="DXAUTO10"
                   autoFocus={false}
                   data-testid="discount-input"
                 />
                 <SubmitButton
                   variant="secondary"
+                  className="!bg-brand-bg !border !border-brand-border !text-brand-text hover:!bg-brand-surface !text-sm !px-4"
                   data-testid="discount-apply-button"
                 >
-                  Apply
+                  Aplicar
                 </SubmitButton>
               </div>
 
@@ -95,15 +91,15 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                 error={errorMessage}
                 data-testid="discount-error-message"
               />
-            </>
+            </div>
           )}
         </form>
 
         {promotions.length > 0 && (
           <div className="w-full flex items-center">
             <div className="flex flex-col w-full">
-              <Heading className="txt-medium mb-2">
-                Promotion(s) applied:
+              <Heading className="text-xs uppercase tracking-wider text-brand-muted mb-2">
+                Cupons aplicados
               </Heading>
 
               {promotions.map((promotion) => {
@@ -158,7 +154,7 @@ const DiscountCode: React.FC<DiscountCodeProps> = ({ cart }) => {
                       >
                         <Trash size={14} />
                         <span className="sr-only">
-                          Remove discount code from order
+                          Remover cupom do pedido
                         </span>
                       </button>
                     )}
