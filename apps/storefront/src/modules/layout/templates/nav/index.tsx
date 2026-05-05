@@ -5,10 +5,11 @@ import { getLocale } from "@lib/data/locale-actions"
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import CartButton from "@modules/layout/components/cart-button"
-import SideMenu from "@modules/layout/components/side-menu"
 import AnnouncementBar from "@modules/layout/components/announcement-bar"
+import CartButton from "@modules/layout/components/cart-button"
 import SearchInput from "@modules/layout/components/search-input"
+import SideMenu from "@modules/layout/components/side-menu"
+import SmartHideWrapper from "@modules/layout/components/smart-hide-wrapper"
 
 const PRIMARY_LINKS = [
   { label: "Multimídia", href: "/categories/multimidia" },
@@ -26,7 +27,7 @@ export default async function Nav() {
   ])
 
   return (
-    <div className="sticky top-0 inset-x-0 z-50 group">
+    <SmartHideWrapper>
       <AnnouncementBar />
       <header className="bg-brand-bg/95 backdrop-blur border-b border-brand-border">
         <div className="content-container">
@@ -141,7 +142,7 @@ export default async function Nav() {
           </div>
         </div>
       </header>
-    </div>
+    </SmartHideWrapper>
   )
 }
 
