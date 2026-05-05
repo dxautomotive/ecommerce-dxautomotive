@@ -5,6 +5,7 @@ import { notFound } from "next/navigation"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductGalleryDX from "@modules/products/components/product-gallery-dx"
 import ProductTabsDX from "@modules/products/components/product-tabs-dx"
+import VehicleCompatibility from "@modules/products/components/vehicle-compatibility"
 import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import TrustBadges from "@modules/products/components/trust-badges"
@@ -84,6 +85,10 @@ export default function ProductTemplateDX({
 
       <section className="content-container py-6 small:py-10">
         <TrustBadges />
+      </section>
+
+      <section className="content-container py-6 small:py-10">
+        <VehicleCompatibility productId={product.id} />
       </section>
 
       <section className="content-container py-6 small:py-10">

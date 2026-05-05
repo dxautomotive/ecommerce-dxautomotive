@@ -20,5 +20,13 @@ export default defineMiddlewares({
       matcher: "/store/vehicles*",
       method: ["GET"],
     },
+    {
+      matcher: "/store/products/:id/vehicles",
+      method: ["GET"],
+    },
+    {
+      matcher: "/store/products/by-vehicle",
+      method: ["GET"],
+    },
   ],
 })
