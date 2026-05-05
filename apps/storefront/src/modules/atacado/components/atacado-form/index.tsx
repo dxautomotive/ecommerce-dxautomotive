@@ -3,6 +3,10 @@
 import { useState } from "react"
 
 const DEFAULT_NUMBER = "5548000000000"
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9001"
+const PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
 
 const PRODUCT_INTERESTS = [
   { value: "multimidia", label: "Multimídia (centrais Android Auto / CarPlay)" },
@@ -51,6 +55,8 @@ export default function AtacadoForm() {
   const [data, setData] = useState<FormData>(empty)
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [submitted, setSubmitted] = useState(false)
+  const [pending, setPending] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => {
     setData((d) => ({ ...d, [k]: v }))
@@ -69,10 +75,58 @@ export default function AtacadoForm() {
     return Object.keys(e).length === 0
   }
 
-  const onSubmit = (event: React.FormEvent) => {
+  const persistLead = async () => {
+    const productLabel =
+      PRODUCT_INTERESTS.find((p) => p.value === data.produto)?.label ?? data.produto
+    const qtyLabel =
+      QUANTITIES.find((q) => q.value === data.quantidade)?.label ?? data.quantidade
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/store/atacado-leads`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(PUBLISHABLE_KEY ? { "x-publishable-api-key": PUBLISHABLE_KEY } : {}),
+        },
+        body: JSON.stringify({
+          name: data.nome,
+          company: data.empresa || null,
+          email: data.email || `sem-email+${Date.now()}@dxautomotive.com.br`,
+          phone: data.whatsapp,
+          segment: productLabel,
+          monthly_volume: qtyLabel,
+          message: data.mensagem || null,
+          source: "website-atacado",
+        }),
+      })
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}))
+        throw new Error(j?.message ?? `Erro ${res.status}`)
+      }
+      return true
+    } catch (e) {
+      // Salvamos no log mas não bloqueamos a UX — o WhatsApp ainda
+      // abre como fallback de captura.
+      // eslint-disable-next-line no-console
+      console.warn("Falha ao persistir lead atacado:", e)
+      setSaveError(
+        "Não conseguimos salvar seu pedido no nosso sistema, mas abrimos o WhatsApp pra você falar direto com a equipe."
+      )
+      return false
+    }
+  }
+
+  const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!validate()) return
 
+    setPending(true)
+    setSaveError(null)
+
+    // 1) Persiste no backend (não bloqueante: se falhar, WA continua)
+    await persistLead()
+
+    // 2) Abre WhatsApp em paralelo com mensagem estruturada
     const number = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || DEFAULT_NUMBER
     const productLabel =
       PRODUCT_INTERESTS.find((p) => p.value === data.produto)?.label ?? data.produto
@@ -94,7 +148,9 @@ export default function AtacadoForm() {
     const text = encodeURIComponent(lines.join("\n"))
     const url = `https://wa.me/${number}?text=${text}`
     window.open(url, "_blank", "noopener,noreferrer")
+
     setSubmitted(true)
+    setPending(false)
   }
 
   if (submitted) {
@@ -212,11 +268,18 @@ export default function AtacadoForm() {
         />
       </Field>
 
+      {saveError && (
+        <p role="alert" className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded px-3 py-2">
+          {saveError}
+        </p>
+      )}
+
       <button
         type="submit"
-        className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold py-3.5 rounded-md transition-colors mt-2"
+        disabled={pending}
+        className="bg-brand-primary hover:bg-brand-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-md transition-colors mt-2"
       >
-        Enviar cotação pelo WhatsApp
+        {pending ? "Enviando…" : "Enviar cotação pelo WhatsApp"}
       </button>
 
       <p className="text-xs text-brand-muted text-center">
