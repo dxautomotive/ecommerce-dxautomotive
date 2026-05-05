@@ -53,44 +53,55 @@ function formatPhone(raw: string) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
 
-const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
-  const [formData, setFormData] = useState<Record<string, string>>({
-    "billing_address.first_name": cart?.billing_address?.first_name || "",
-    "billing_address.last_name": cart?.billing_address?.last_name || "",
-    "billing_address.address_1": cart?.billing_address?.address_1 || "",
-    "billing_address.address_2": cart?.billing_address?.address_2 || "",
-    "billing_address.company": cart?.billing_address?.company || "",
-    "billing_address.postal_code": cart?.billing_address?.postal_code || "",
-    "billing_address.city": cart?.billing_address?.city || "",
-    "billing_address.country_code":
-      cart?.billing_address?.country_code || "br",
-    "billing_address.province": cart?.billing_address?.province || "",
-    "billing_address.phone": cart?.billing_address?.phone
-      ? formatPhone(cart.billing_address.phone)
-      : "",
+type Props = {
+  region: HttpTypes.StoreRegion
+  defaults?: Partial<HttpTypes.StoreCustomerAddress>
+  testIdPrefix?: string
+}
+
+/**
+ * Campos compartilhados para os modais de adicionar/editar endereço da
+ * conta. Mesmo padrão visual e funcional do `<ShippingAddress>` do
+ * checkout: dark, ViaCEP autopreencher, máscaras, select de 27 UFs.
+ *
+ * Nomes dos inputs (sem prefixo) batem com os esperados pelas server
+ * actions `addCustomerAddress` / `updateCustomerAddress`.
+ */
+const AddressFormFields = ({ region, defaults, testIdPrefix }: Props) => {
+  const t = (s: string) => (testIdPrefix ? `${testIdPrefix}-${s}` : s)
+
+  const [form, setForm] = useState({
+    first_name: defaults?.first_name ?? "",
+    last_name: defaults?.last_name ?? "",
+    address_1: defaults?.address_1 ?? "",
+    address_2: defaults?.address_2 ?? "",
+    company: defaults?.company ?? "",
+    postal_code: defaults?.postal_code ?? "",
+    city: defaults?.city ?? "",
+    province: defaults?.province ?? "",
+    country_code: defaults?.country_code ?? "br",
+    phone: defaults?.phone ? formatPhone(defaults.phone) : "",
   })
   const [cepLoading, setCepLoading] = useState(false)
   const [cepError, setCepError] = useState<string | null>(null)
 
   const showCountryField = useMemo(
-    () => (cart?.region?.countries?.length ?? 0) > 1,
-    [cart?.region]
+    () => (region?.countries?.length ?? 0) > 1,
+    [region]
   )
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     let value = e.target.value
-    if (e.target.name === "billing_address.postal_code") {
-      value = formatCep(value)
-    } else if (e.target.name === "billing_address.phone") {
-      value = formatPhone(value)
-    }
-    setFormData({ ...formData, [e.target.name]: value })
+    const name = e.target.name as keyof typeof form
+    if (name === "postal_code") value = formatCep(value)
+    if (name === "phone") value = formatPhone(value)
+    setForm((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleCepBlur = async () => {
-    const cep = formData["billing_address.postal_code"].replace(/\D/g, "")
+    const cep = form.postal_code.replace(/\D/g, "")
     if (cep.length !== 8) return
     setCepLoading(true)
     setCepError(null)
@@ -102,14 +113,14 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
         setCepError("CEP não encontrado.")
         return
       }
-      setFormData((prev) => ({
+      setForm((prev) => ({
         ...prev,
-        "billing_address.address_1":
-          prev["billing_address.address_1"] ||
+        address_1:
+          prev.address_1 ||
           [data.logradouro, data.bairro].filter(Boolean).join(", "),
-        "billing_address.city": data.localidade || prev["billing_address.city"],
-        "billing_address.province": data.uf || prev["billing_address.province"],
-        "billing_address.country_code": "br",
+        city: data.localidade || prev.city,
+        province: data.uf || prev.province,
+        country_code: "br",
       }))
     } catch {
       setCepError("Erro ao consultar o CEP. Preencha manualmente.")
@@ -119,118 +130,130 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
   }
 
   return (
-    <div className="flex flex-col gap-y-6">
+    <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 small:grid-cols-2 gap-4">
-        <Field label="Nome" htmlFor="billing_address.first_name" required>
+        <Field label="Nome" htmlFor="first_name" required>
           <input
-            id="billing_address.first_name"
-            name="billing_address.first_name"
+            id="first_name"
+            name="first_name"
             autoComplete="given-name"
-            value={formData["billing_address.first_name"]}
+            value={form.first_name}
             onChange={handleChange}
             required
             className={inputClass}
-            data-testid="billing-first-name-input"
+            data-testid={t("first-name-input")}
           />
         </Field>
-        <Field label="Sobrenome" htmlFor="billing_address.last_name" required>
+        <Field label="Sobrenome" htmlFor="last_name" required>
           <input
-            id="billing_address.last_name"
-            name="billing_address.last_name"
+            id="last_name"
+            name="last_name"
             autoComplete="family-name"
-            value={formData["billing_address.last_name"]}
+            value={form.last_name}
             onChange={handleChange}
             required
             className={inputClass}
-            data-testid="billing-last-name-input"
+            data-testid={t("last-name-input")}
           />
         </Field>
       </div>
 
+      <Field label="Empresa" htmlFor="company" hint="Opcional — para envios para CNPJ">
+        <input
+          id="company"
+          name="company"
+          autoComplete="organization"
+          value={form.company}
+          onChange={handleChange}
+          className={inputClass}
+          data-testid={t("company-input")}
+        />
+      </Field>
+
       <div className="grid grid-cols-1 small:grid-cols-3 gap-4">
         <Field
           label="CEP"
-          htmlFor="billing_address.postal_code"
+          htmlFor="postal_code"
           required
           hint={cepLoading ? "Consultando CEP…" : cepError ?? "Preenche o resto do endereço automaticamente."}
         >
           <input
-            id="billing_address.postal_code"
-            name="billing_address.postal_code"
+            id="postal_code"
+            name="postal_code"
             autoComplete="postal-code"
             inputMode="numeric"
             placeholder="00000-000"
             maxLength={9}
-            value={formData["billing_address.postal_code"]}
+            value={form.postal_code}
             onChange={handleChange}
             onBlur={handleCepBlur}
             required
             className={inputClass}
-            data-testid="billing-postal-input"
+            data-testid={t("postal-code-input")}
           />
         </Field>
         <Field
           label="Endereço"
-          htmlFor="billing_address.address_1"
+          htmlFor="address_1"
           hint="Rua, número e bairro"
           required
           className="small:col-span-2"
         >
           <input
-            id="billing_address.address_1"
-            name="billing_address.address_1"
+            id="address_1"
+            name="address_1"
             autoComplete="address-line1"
             placeholder="Av. Brasil, 1234, Centro"
-            value={formData["billing_address.address_1"]}
+            value={form.address_1}
             onChange={handleChange}
             required
             className={inputClass}
-            data-testid="billing-address-input"
+            data-testid={t("address-1-input")}
           />
         </Field>
       </div>
 
-      <Field label="Complemento" htmlFor="billing_address.address_2" hint="Apto, bloco, ponto de referência (opcional)">
+      <Field label="Complemento" htmlFor="address_2" hint="Apto, bloco, ponto de referência (opcional)">
         <input
-          id="billing_address.address_2"
-          name="billing_address.address_2"
+          id="address_2"
+          name="address_2"
           autoComplete="address-line2"
           placeholder="Apto 302, fundos, próximo ao mercado…"
-          value={formData["billing_address.address_2"]}
+          value={form.address_2}
           onChange={handleChange}
           className={inputClass}
-          data-testid="billing-address2-input"
+          data-testid={t("address-2-input")}
         />
       </Field>
 
       <div className="grid grid-cols-1 small:grid-cols-3 gap-4">
         <Field
           label="Cidade"
-          htmlFor="billing_address.city"
+          htmlFor="city"
           required
           className="small:col-span-2"
         >
           <input
-            id="billing_address.city"
-            name="billing_address.city"
+            id="city"
+            name="city"
             autoComplete="address-level2"
-            value={formData["billing_address.city"]}
+            value={form.city}
             onChange={handleChange}
             required
             className={inputClass}
-            data-testid="billing-city-input"
+            data-testid={t("city-input")}
           />
         </Field>
-        <Field label="Estado (UF)" htmlFor="billing_address.province" required>
+        <Field label="Estado (UF)" htmlFor="province" required>
           <select
-            id="billing_address.province"
-            name="billing_address.province"
+            id="province"
+            name="province"
             autoComplete="address-level1"
-            value={formData["billing_address.province"]}
+            value={form.province}
             onChange={handleChange}
             required
             className={inputClass}
-            data-testid="billing-province-input"
+            data-testid={t("state-input")}
           >
             <option value="">UF</option>
             {UF_LIST.map((uf) => (
@@ -243,18 +266,18 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
       </div>
 
       {showCountryField ? (
-        <Field label="País" htmlFor="billing_address.country_code" required>
+        <Field label="País" htmlFor="country_code" required>
           <select
-            id="billing_address.country_code"
-            name="billing_address.country_code"
+            id="country_code"
+            name="country_code"
             autoComplete="country"
-            value={formData["billing_address.country_code"]}
+            value={form.country_code}
             onChange={handleChange}
             required
             className={inputClass}
-            data-testid="billing-country-select"
+            data-testid={t("country-select")}
           >
-            {cart?.region?.countries?.map((c) => (
+            {region?.countries?.map((c) => (
               <option key={c.iso_2} value={c.iso_2}>
                 {c.display_name ?? c.name}
               </option>
@@ -262,33 +285,29 @@ const BillingAddress = ({ cart }: { cart: HttpTypes.StoreCart | null }) => {
           </select>
         </Field>
       ) : (
-        <input
-          type="hidden"
-          name="billing_address.country_code"
-          value={formData["billing_address.country_code"]}
-        />
+        <input type="hidden" name="country_code" value={form.country_code} />
       )}
 
       <Field
-        label="Telefone (opcional)"
-        htmlFor="billing_address.phone"
-        hint="Pode ser usado para confirmação de pagamento"
+        label="Celular / WhatsApp"
+        htmlFor="phone"
+        hint="Para acompanhamento de entregas"
       >
         <input
-          id="billing_address.phone"
-          name="billing_address.phone"
+          id="phone"
+          name="phone"
           type="tel"
           autoComplete="tel"
           inputMode="numeric"
           placeholder="(00) 00000-0000"
-          value={formData["billing_address.phone"]}
+          value={form.phone}
           onChange={handleChange}
           className={inputClass}
-          data-testid="billing-phone-input"
+          data-testid={t("phone-input")}
         />
       </Field>
     </div>
   )
 }
 
-export default BillingAddress
+export default AddressFormFields

@@ -314,7 +314,7 @@ const ShippingAddress = ({
         </Field>
       </div>
 
-      {showCountryField && (
+      {showCountryField ? (
         <Field label="País" htmlFor="shipping_address.country_code" required>
           <select
             id="shipping_address.country_code"
@@ -333,6 +333,16 @@ const ShippingAddress = ({
             ))}
           </select>
         </Field>
+      ) : (
+        // País escondido quando a região só atende um país (ex: BR-only) —
+        // ainda assim o valor precisa ir no FormData, senão o setAddresses
+        // redireciona para `/null/checkout?...`. Cobre o bug pré-existente
+        // identificado na Sessão 10-prep B.
+        <input
+          type="hidden"
+          name="shipping_address.country_code"
+          value={formData["shipping_address.country_code"]}
+        />
       )}
 
       <div className="bg-brand-bg border border-brand-border rounded-lg p-4 flex items-start gap-3">
