@@ -7,7 +7,8 @@ import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 export const metadata: Metadata = {
-  title: "Checkout",
+  title: "Finalizar compra",
+  description: "Conclua sua compra na DX Automotive com pagamento seguro.",
 }
 
 export default async function Checkout() {

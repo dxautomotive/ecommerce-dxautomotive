@@ -1,10 +1,8 @@
 "use client"
 
 import { useActionState } from "react"
-import Input from "@modules/common/components/input"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
-import { SubmitButton } from "@modules/checkout/components/submit-button"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { signup } from "@lib/data/customer"
 
@@ -13,93 +11,164 @@ type Props = {
 }
 
 const Register = ({ setCurrentView }: Props) => {
-  const [message, formAction] = useActionState(signup as (state: string | null, formData: FormData) => Promise<string | null>, null as string | null)
+  const [message, formAction] = useActionState(
+    signup as (state: string | null, formData: FormData) => Promise<string | null>,
+    null as string | null
+  )
 
   return (
     <div
-      className="max-w-sm flex flex-col items-center"
+      className="bg-brand-surface border border-brand-border rounded-xl p-6 small:p-8 w-full"
       data-testid="register-page"
     >
-      <h1 className="text-large-semi uppercase mb-6">
-        Become a Medusa Store Member
-      </h1>
-      <p className="text-center text-base-regular text-ui-fg-base mb-4">
-        Create your Medusa Store Member profile, and get access to an enhanced
-        shopping experience.
-      </p>
-      <form className="w-full flex flex-col" action={formAction}>
-        <div className="flex flex-col w-full gap-y-2">
-          <Input
-            label="First name"
-            name="first_name"
-            required
-            autoComplete="given-name"
-            data-testid="first-name-input"
-          />
-          <Input
-            label="Last name"
-            name="last_name"
-            required
-            autoComplete="family-name"
-            data-testid="last-name-input"
-          />
-          <Input
-            label="Email"
+      <div className="mb-6">
+        <span className="text-brand-primary text-xs uppercase tracking-[0.25em] font-bold">
+          Novo cliente
+        </span>
+        <h1 className="text-2xl small:text-3xl font-extrabold text-brand-text mt-2">
+          Criar conta na DX Automotive
+        </h1>
+        <p className="text-brand-muted text-sm mt-2">
+          Acesso ao histórico de pedidos, endereços salvos e cupons exclusivos.
+        </p>
+      </div>
+
+      <form className="flex flex-col gap-3" action={formAction}>
+        <div className="grid grid-cols-1 small:grid-cols-2 gap-3">
+          <Field label="Nome" htmlFor="first_name">
+            <input
+              id="first_name"
+              name="first_name"
+              required
+              autoComplete="given-name"
+              data-testid="first-name-input"
+              placeholder="João"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Sobrenome" htmlFor="last_name">
+            <input
+              id="last_name"
+              name="last_name"
+              required
+              autoComplete="family-name"
+              data-testid="last-name-input"
+              placeholder="Silva"
+              className={inputClass}
+            />
+          </Field>
+        </div>
+
+        <Field label="E-mail" htmlFor="email">
+          <input
+            id="email"
             name="email"
-            required
             type="email"
+            required
             autoComplete="email"
             data-testid="email-input"
+            placeholder="seu@email.com.br"
+            className={inputClass}
           />
-          <Input
-            label="Phone"
+        </Field>
+
+        <Field label="WhatsApp / Telefone" htmlFor="phone" optional>
+          <input
+            id="phone"
             name="phone"
             type="tel"
             autoComplete="tel"
             data-testid="phone-input"
+            placeholder="(11) 99999-0000"
+            className={inputClass}
           />
-          <Input
-            label="Password"
+        </Field>
+
+        <Field label="Senha" htmlFor="password">
+          <input
+            id="password"
             name="password"
-            required
             type="password"
+            required
             autoComplete="new-password"
+            minLength={8}
             data-testid="password-input"
+            placeholder="Mínimo 8 caracteres"
+            className={inputClass}
           />
-        </div>
+        </Field>
+
         <ErrorMessage error={message} data-testid="register-error" />
-        <span className="text-center text-ui-fg-base text-small-regular mt-6">
-          By creating an account, you agree to Medusa Store&apos;s{" "}
+
+        <p className="text-xs text-brand-muted mt-2 leading-relaxed">
+          Ao criar uma conta, você concorda com nossa{" "}
           <LocalizedClientLink
-            href="/content/privacy-policy"
-            className="underline"
+            href="/politicas/privacidade"
+            className="text-brand-primary hover:underline"
           >
-            Privacy Policy
+            Política de Privacidade
           </LocalizedClientLink>{" "}
-          and{" "}
+          e nossas{" "}
           <LocalizedClientLink
-            href="/content/terms-of-use"
-            className="underline"
+            href="/politicas/trocas-e-devolucoes"
+            className="text-brand-primary hover:underline"
           >
-            Terms of Use
+            condições de uso
           </LocalizedClientLink>
           .
-        </span>
-        <SubmitButton className="w-full mt-6" data-testid="register-button">
-          Join
-        </SubmitButton>
-      </form>
-      <span className="text-center text-ui-fg-base text-small-regular mt-6">
-        Already a member?{" "}
+        </p>
+
         <button
-          onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
-          className="underline"
+          type="submit"
+          data-testid="register-button"
+          className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold py-3 rounded-md transition-colors mt-2"
         >
-          Sign in
+          Criar minha conta
         </button>
-        .
-      </span>
+      </form>
+
+      <div className="mt-6 pt-6 border-t border-brand-border text-center text-sm">
+        <p className="text-brand-muted">
+          Já tem conta?{" "}
+          <button
+            type="button"
+            onClick={() => setCurrentView(LOGIN_VIEW.SIGN_IN)}
+            className="text-brand-primary hover:text-brand-primary-hover font-semibold"
+          >
+            Entrar
+          </button>
+        </p>
+      </div>
     </div>
+  )
+}
+
+const inputClass =
+  "w-full bg-brand-bg border border-brand-border focus:border-brand-primary text-brand-text placeholder:text-brand-muted text-sm rounded px-3 py-2.5 outline-none transition-colors"
+
+function Field({
+  label,
+  htmlFor,
+  optional,
+  children,
+}: {
+  label: string
+  htmlFor: string
+  optional?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <label htmlFor={htmlFor} className="flex flex-col gap-1.5">
+      <span className="text-brand-text text-sm font-medium">
+        {label}
+        {optional && (
+          <span className="text-brand-muted font-normal text-xs ml-1">
+            (opcional)
+          </span>
+        )}
+      </span>
+      {children}
+    </label>
   )
 }
 
