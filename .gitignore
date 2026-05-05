@@ -1,0 +1,74 @@
+# ─── Environment / segredos ─────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+!.env.example
+
+# ─── Node / npm / turbo ─────────────────────────────────────
+node_modules/
+.npm/
+.pnpm-store/
+.turbo/
+
+# ─── Build artifacts ────────────────────────────────────────
+dist/
+build/
+out/
+.next/
+.vercel/
+.medusa/
+apps/backend/.medusa/
+
+# ─── Logs ───────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# ─── Tests / coverage ───────────────────────────────────────
+coverage/
+.nyc_output/
+*.tsbuildinfo
+playwright-report/
+test-results/
+
+# ─── OS ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+
+# ─── Editor / IDE ───────────────────────────────────────────
+.idea/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# ─── Docker / infra local ──────────────────────────────────
+docker-compose.override.yml
+postgres-data/
+redis-data/
+
+# ─── Playwright (browser automation usado em dev) ──────────
+.playwright-mcp/
+
+# ─── Tema de referência visual (NÃO faz parte do projeto) ──
+# Conforme ADR-003: pasta presente localmente apenas como
+# referência de design. NÃO incluir no repositório.
+Vision-Generico-V35/
+
+# ─── Screenshots gerados em desenvolvimento ────────────────
+*.png
+!apps/storefront/public/**/*.png
+!docs/**/*.png
+
+# ─── Misc ──────────────────────────────────────────────────
+*.pid
+*.seed
+*.pid.lock
+.cache/
