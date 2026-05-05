@@ -2,6 +2,7 @@ import {
   MedusaRequest,
   MedusaResponse,
 } from "@medusajs/framework/http"
+import { Modules } from "@medusajs/framework/utils"
 import { ATACADO_LEADS_MODULE } from "../../../modules/atacado_leads"
 import AtacadoLeadsModuleService from "../../../modules/atacado_leads/service"
 
@@ -57,6 +58,15 @@ export async function POST(
     monthly_volume: sanitize(body.monthly_volume),
     message: sanitize(body.message),
     source: sanitize(body.source) ?? "website",
+  })
+
+  // Emite evento para subscribers reagirem (envio de e-mail, notificação
+  // interna, integração com CRM, etc.). Hoje só faz log estruturado;
+  // quando Resend estiver configurado, o subscriber dispara o e-mail.
+  const eventBus = req.scope.resolve(Modules.EVENT_BUS)
+  await eventBus.emit({
+    name: "atacado_lead.created",
+    data: { id: lead.id },
   })
 
   return res.status(201).json({ id: lead.id, status: lead.status })

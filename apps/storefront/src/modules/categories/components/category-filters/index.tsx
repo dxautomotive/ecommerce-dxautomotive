@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 export type FilterFacets = {
   marcas: string[]
@@ -9,6 +9,97 @@ export type FilterFacets = {
   anos: number[]
   priceMin: number
   priceMax: number
+}
+
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9001"
+const PUBLISHABLE_KEY =
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
+
+const apiHeaders = PUBLISHABLE_KEY
+  ? { "x-publishable-api-key": PUBLISHABLE_KEY }
+  : undefined
+
+/**
+ * Hook que busca marcas/modelos/anos da API real `/store/vehicles`.
+ * Quando a API retorna lista vazia (banco sem veículos cadastrados),
+ * cai nos facets locais passados como prop pra não deixar o filtro
+ * vazio.
+ */
+function useVehicleFacets(fallback: {
+  marcas: string[]
+  modelos: Record<string, string[]>
+  anos: number[]
+}) {
+  const [makes, setMakes] = useState<string[]>([])
+  const [modelsByMake, setModelsByMake] = useState<Record<string, string[]>>({})
+  const [yearsByModel, setYearsByModel] = useState<Record<string, number[]>>({})
+
+  // Carrega marcas no mount
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/store/vehicles`, { headers: apiHeaders })
+      .then((r) => (r.ok ? r.json() : { makes: [] }))
+      .then((j) => setMakes(j.makes ?? []))
+      .catch(() => setMakes([]))
+  }, [])
+
+  const loadModels = useCallback(async (make: string) => {
+    if (!make || modelsByMake[make]) return
+    try {
+      const r = await fetch(
+        `${BACKEND_URL}/store/vehicles?make=${encodeURIComponent(make)}`,
+        { headers: apiHeaders }
+      )
+      if (!r.ok) return
+      const j = await r.json()
+      setModelsByMake((p) => ({ ...p, [make]: j.models ?? [] }))
+    } catch {
+      // silencia
+    }
+  }, [modelsByMake])
+
+  const loadYears = useCallback(
+    async (make: string, model: string) => {
+      const key = `${make}|${model}`
+      if (!make || !model || yearsByModel[key]) return
+      try {
+        const r = await fetch(
+          `${BACKEND_URL}/store/vehicles?make=${encodeURIComponent(make)}&model=${encodeURIComponent(model)}`,
+          { headers: apiHeaders }
+        )
+        if (!r.ok) return
+        const j = await r.json()
+        setYearsByModel((p) => ({ ...p, [key]: j.years ?? [] }))
+      } catch {
+        // silencia
+      }
+    },
+    [yearsByModel]
+  )
+
+  // Combina API + fallback (API tem prioridade)
+  const effectiveMakes = makes.length > 0 ? makes : fallback.marcas
+  const effectiveModels = (make: string): string[] => {
+    if (makes.length > 0) {
+      return modelsByMake[make] ?? []
+    }
+    return fallback.modelos[make] ?? []
+  }
+  const effectiveYears = (make: string, model: string): number[] => {
+    if (makes.length > 0) {
+      return yearsByModel[`${make}|${model}`] ?? []
+    }
+    return fallback.anos
+  }
+
+  return {
+    makes: effectiveMakes,
+    getModels: effectiveModels,
+    getYears: effectiveYears,
+    loadModels,
+    loadYears,
+    usingApi: makes.length > 0,
+  }
 }
 
 type Props = {
@@ -62,9 +153,32 @@ export default function CategoryFilters({ facets, currency }: Props) {
   const clearAll = () => router.push(pathname, { scroll: false })
   const hasFilters = Object.values(current).some(Boolean)
 
+  const vehicles = useVehicleFacets({
+    marcas: facets.marcas,
+    modelos: facets.modelos,
+    anos: facets.anos,
+  })
+
+  // Quando troca de marca, carrega modelos da API
+  useEffect(() => {
+    if (current.marca) vehicles.loadModels(current.marca)
+  }, [current.marca, vehicles])
+
+  // Quando troca de modelo, carrega anos da API
+  useEffect(() => {
+    if (current.marca && current.modelo) {
+      vehicles.loadYears(current.marca, current.modelo)
+    }
+  }, [current.marca, current.modelo, vehicles])
+
   const modelosForMarca = current.marca
-    ? facets.modelos[current.marca] ?? []
+    ? vehicles.getModels(current.marca)
     : Object.values(facets.modelos).flat()
+
+  const anosForModelo =
+    current.marca && current.modelo
+      ? vehicles.getYears(current.marca, current.modelo)
+      : facets.anos
 
   const fmt = (n: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(n)
@@ -80,7 +194,7 @@ export default function CategoryFilters({ facets, currency }: Props) {
             placeholder="Todas as marcas"
             options={[
               { label: "Todas", value: "" },
-              ...facets.marcas.map((m) => ({ label: m, value: m })),
+              ...vehicles.makes.map((m) => ({ label: m, value: m })),
             ]}
           />
         </div>
@@ -106,7 +220,7 @@ export default function CategoryFilters({ facets, currency }: Props) {
               placeholder="—"
               options={[
                 { label: "—", value: "" },
-                ...facets.anos.map((y) => ({ label: String(y), value: String(y) })),
+                ...anosForModelo.map((y) => ({ label: String(y), value: String(y) })),
               ]}
             />
           </div>
@@ -118,7 +232,7 @@ export default function CategoryFilters({ facets, currency }: Props) {
               placeholder="—"
               options={[
                 { label: "—", value: "" },
-                ...facets.anos.map((y) => ({ label: String(y), value: String(y) })),
+                ...anosForModelo.map((y) => ({ label: String(y), value: String(y) })),
               ]}
             />
           </div>
