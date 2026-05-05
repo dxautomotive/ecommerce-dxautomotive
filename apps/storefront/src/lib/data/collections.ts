@@ -29,6 +29,9 @@ export const listCollections = async (
 
   queryParams.limit = queryParams.limit || "100"
   queryParams.offset = queryParams.offset || "0"
+  // Garante que metadata venha no payload — usado pelo storefront DX
+  // pra render do <FeaturedCollection> (gradient, CTA, layout, etc).
+  queryParams.fields = queryParams.fields || "id,title,handle,metadata"
 
   return await sdk.client
     .fetch<{ collections: HttpTypes.StoreCollection[]; count: number }>(
@@ -51,9 +54,32 @@ export const getCollectionByHandle = async (
 
   return await sdk.client
     .fetch<HttpTypes.StoreCollectionListResponse>(`/store/collections`, {
-      query: { handle, fields: "*products" },
+      query: { handle, fields: "id,title,handle,metadata,*products" },
       next,
       cache: "force-cache",
     })
     .then(({ collections }) => collections[0] || null)
+}
+
+/**
+ * Lista as coleções marcadas como `is_featured=true` nos metadados,
+ * ordenadas por `display_order` ascendente. Usado pela home pra
+ * decidir quais blocos `<FeaturedCollection>` renderizar.
+ *
+ * Tipo `DXCollectionMeta` e helper `getDXMeta` ficam em
+ * `lib/util/collection-meta.ts` (sync) — não podem morar aqui porque
+ * este arquivo é "use server" e exige tudo async.
+ */
+export const listFeaturedCollections = async (): Promise<
+  HttpTypes.StoreCollection[]
+> => {
+  const { getDXMeta } = await import("@lib/util/collection-meta")
+  const { collections } = await listCollections({ limit: "100" })
+  return collections
+    .filter((c) => getDXMeta(c).is_featured === true)
+    .sort(
+      (a, b) =>
+        (getDXMeta(a).display_order ?? 999) -
+        (getDXMeta(b).display_order ?? 999)
+    )
 }

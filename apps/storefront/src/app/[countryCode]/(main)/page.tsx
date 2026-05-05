@@ -1,5 +1,8 @@
 import { Metadata } from "next"
 
+import { listFeaturedCollections } from "@lib/data/collections"
+import { getRegion } from "@lib/data/regions"
+import FeaturedCollection from "@modules/collections/components/featured-collection"
 import BenefitsBar from "@modules/home/components/benefits-bar"
 import CategoryShowcase from "@modules/home/components/category-showcase"
 import FeaturedProductsDX from "@modules/home/components/featured-products-dx"
@@ -7,7 +10,6 @@ import FlashSaleBanner from "@modules/home/components/flash-sale-banner"
 import HeroCarousel from "@modules/home/components/hero-carousel"
 import PromotionBlocks from "@modules/home/components/promotion-blocks"
 import Testimonials from "@modules/home/components/testimonials"
-import { getRegion } from "@lib/data/regions"
 
 export const metadata: Metadata = {
   title: "DX Automotive — Tecnologia que transforma seu carro",
@@ -24,6 +26,8 @@ export default async function Home(props: {
   const region = await getRegion(countryCode)
   if (!region) return null
 
+  const featuredCollections = await listFeaturedCollections().catch(() => [])
+
   return (
     <>
       <HeroCarousel />
@@ -37,6 +41,17 @@ export default async function Home(props: {
         description="Os equipamentos mais vendidos da loja, prontos para envio imediato."
         limit={8}
       />
+
+      {/* Coleções destacadas — vêm do admin (metadata.is_featured=true) */}
+      {featuredCollections.map((collection) => (
+        <FeaturedCollection
+          key={collection.id}
+          collection={collection}
+          countryCode={countryCode}
+          limit={8}
+        />
+      ))}
+
       <PromotionBlocks />
       <Testimonials />
       <FeaturedProductsDX

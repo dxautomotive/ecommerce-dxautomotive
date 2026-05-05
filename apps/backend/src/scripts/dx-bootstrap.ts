@@ -6,6 +6,7 @@ import {
 } from "@medusajs/framework/utils"
 import {
   createApiKeysWorkflow,
+  createCollectionsWorkflow,
   createProductCategoriesWorkflow,
   createProductsWorkflow,
   createRegionsWorkflow,
@@ -16,6 +17,7 @@ import {
   createTaxRegionsWorkflow,
   linkSalesChannelsToApiKeyWorkflow,
   linkSalesChannelsToStockLocationWorkflow,
+  updateCollectionsWorkflow,
   updateStoresWorkflow,
 } from "@medusajs/medusa/core-flows"
 import { VEHICLE_COMPATIBILITY_MODULE } from "../modules/vehicle_compatibility"
@@ -335,6 +337,148 @@ export default async function dxBootstrap({ container }: ExecArgs) {
 
   const multimidiaCategory = categories.find((c) => c.handle === "multimidia")
 
+  // 8b) Coleções DX -----------------------------------------------------
+  // Coleções são agrupamentos transversais por critério de marketing
+  // (não confundir com categorias hierárquicas). Os custom fields ficam
+  // em `metadata` (jsonb) — admin edita via widget; storefront lê via
+  // /store/collections.
+  type DXCollectionSeed = {
+    title: string
+    handle: string
+    metadata: {
+      subtitle: string
+      gradient_from: string
+      gradient_to: string
+      gradient_deg: number
+      cta_label: string
+      cta_url: string | null
+      layout: "vertical" | "horizontal"
+      is_featured: boolean
+      display_order: number
+      image_url: string | null
+    }
+  }
+
+  const dxCollections: DXCollectionSeed[] = [
+    {
+      title: "Mais vendidos",
+      handle: "mais-vendidos",
+      metadata: {
+        subtitle: "O que mais sai da prateleira",
+        gradient_from: "#1e40af",
+        gradient_to: "#0ea5e9",
+        gradient_deg: 135,
+        cta_label: "Ver todos →",
+        cta_url: null,
+        layout: "vertical",
+        is_featured: true,
+        display_order: 1,
+        image_url: null,
+      },
+    },
+    {
+      title: "Lançamentos",
+      handle: "lancamentos",
+      metadata: {
+        subtitle: "Acabou de chegar no estoque",
+        gradient_from: "#7c3aed",
+        gradient_to: "#ec4899",
+        gradient_deg: 120,
+        cta_label: "Conferir →",
+        cta_url: null,
+        layout: "vertical",
+        is_featured: true,
+        display_order: 2,
+        image_url: null,
+      },
+    },
+    {
+      title: "Linha Premium DX",
+      handle: "linha-premium",
+      metadata: {
+        subtitle: "Audi · BMW · Mercedes · Toyota Original Look",
+        gradient_from: "#0f172a",
+        gradient_to: "#475569",
+        gradient_deg: 145,
+        cta_label: "Explorar →",
+        cta_url: null,
+        layout: "horizontal",
+        is_featured: true,
+        display_order: 3,
+        image_url: null,
+      },
+    },
+    {
+      title: "Frete grátis",
+      handle: "frete-gratis",
+      metadata: {
+        subtitle: "Compre acima de R$ 499 e receba sem custo de frete",
+        gradient_from: "#16a34a",
+        gradient_to: "#84cc16",
+        gradient_deg: 120,
+        cta_label: "Ver promoções →",
+        cta_url: null,
+        layout: "vertical",
+        is_featured: false,
+        display_order: 4,
+        image_url: null,
+      },
+    },
+  ]
+
+  const { data: existingCollections } = await query.graph({
+    entity: "product_collection",
+    fields: ["id", "title", "handle", "metadata"],
+  })
+
+  const collectionsToCreate = dxCollections.filter(
+    (c) => !existingCollections.some((e) => e.handle === c.handle)
+  )
+  const allCollections: Array<{ id: string; handle: string }> = [
+    ...existingCollections.filter((e) =>
+      dxCollections.some((c) => c.handle === e.handle)
+    ),
+  ]
+
+  if (collectionsToCreate.length > 0) {
+    const { result } = await createCollectionsWorkflow(container).run({
+      input: {
+        collections: collectionsToCreate.map((c) => ({
+          title: c.title,
+          handle: c.handle,
+          metadata: c.metadata,
+        })),
+      },
+    })
+    allCollections.push(...result.map((r) => ({ id: r.id, handle: r.handle! })))
+    logger.info(
+      `[DX] Coleções criadas: ${result.map((c) => c.handle).join(", ")}`
+    )
+  } else {
+    logger.info("[DX] Todas as coleções DX já existem")
+  }
+
+  // Atualiza metadata das que já existiam (idempotente: garante que
+  // mudanças no seed sobrescrevam o que está no banco)
+  for (const seed of dxCollections) {
+    const existing = existingCollections.find((e) => e.handle === seed.handle)
+    if (!existing) continue
+
+    const currentMeta = (existing.metadata ?? {}) as Record<string, unknown>
+    const needsUpdate = Object.entries(seed.metadata).some(
+      ([k, v]) => currentMeta[k] !== v
+    )
+    if (!needsUpdate) continue
+
+    await updateCollectionsWorkflow(container).run({
+      input: {
+        selector: { id: existing.id },
+        update: { metadata: seed.metadata },
+      },
+    })
+    logger.info(`[DX] Metadata atualizada para coleção ${seed.handle}`)
+  }
+
   // 9) Produto de teste -------------------------------------------------
   const { data: products } = await query.graph({
     entity: "product",
@@ -343,6 +487,10 @@ export default async function dxBootstrap({ container }: ExecArgs) {
   let product = products.find(
     (p) => p.handle === "multimidia-android-toyota-corolla-2018-2022-tela-9"
   )
+  const maisVendidos = allCollections.find((c) => c.handle === "mais-vendidos")
+  const lancamentos = allCollections.find((c) => c.handle === "lancamentos")
+  const linhaPremium = allCollections.find((c) => c.handle === "linha-premium")
+
   if (!product && multimidiaCategory) {
     const { result } = await createProductsWorkflow(container).run({
       input: {
@@ -354,6 +502,7 @@ export default async function dxBootstrap({ container }: ExecArgs) {
             description:
               "Central multimídia Android com tela de 9 polegadas, compatível com CarPlay e Android Auto sem fio. Câmera de ré inclusa, 2GB RAM + 32GB ROM, GPS embarcado, Bluetooth 5.0 e WiFi. Plug & play — não corta nenhum chicote original do Corolla 2018 a 2022.",
             category_ids: [multimidiaCategory.id],
+            collection_id: maisVendidos?.id,
             weight: 4500,
             status: ProductStatus.PUBLISHED,
             shipping_profile_id: shippingProfile.id,
@@ -373,6 +522,8 @@ export default async function dxBootstrap({ container }: ExecArgs) {
       },
     })
     product = result[0]
+    void lancamentos
+    void linhaPremium
     logger.info(`[DX] Produto teste criado: ${product.id}`)
   } else if (product) {
     logger.info(`[DX] Produto teste já existe: ${product.id}`)
