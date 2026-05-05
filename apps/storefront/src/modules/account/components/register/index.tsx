@@ -4,6 +4,7 @@ import { useActionState } from "react"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import PasswordInput from "@modules/common/components/password-input"
 import { signup } from "@lib/data/customer"
 
 type Props = {
@@ -85,16 +86,14 @@ const Register = ({ setCurrentView }: Props) => {
         </Field>
 
         <Field label="Senha" htmlFor="password">
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
             autoComplete="new-password"
             minLength={8}
             data-testid="password-input"
             placeholder="Mínimo 8 caracteres"
-            className={inputClass}
           />
         </Field>
 

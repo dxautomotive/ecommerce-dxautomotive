@@ -1,6 +1,7 @@
 import { login } from "@lib/data/customer"
 import { LOGIN_VIEW } from "@modules/account/templates/login-template"
 import ErrorMessage from "@modules/checkout/components/error-message"
+import PasswordInput from "@modules/common/components/password-input"
 import { useActionState } from "react"
 
 type Props = {
@@ -42,15 +43,13 @@ const Login = ({ setCurrentView }: Props) => {
         </Field>
 
         <Field label="Senha" htmlFor="password">
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
             required
             placeholder="••••••••"
             data-testid="password-input"
-            className={inputClass}
           />
         </Field>
 

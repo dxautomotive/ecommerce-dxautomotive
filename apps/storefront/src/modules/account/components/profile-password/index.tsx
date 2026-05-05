@@ -1,21 +1,22 @@
 "use client"
 
 import React from "react"
-import Input from "@modules/common/components/input"
 import AccountInfo from "../account-info"
+import PasswordInput from "@modules/common/components/password-input"
 import { HttpTypes } from "@medusajs/types"
-// TODO: Re-add toast notifications when Toaster component is implemented
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
 }
 
-const ProfilePassword: React.FC<MyInformationProps> = ({ customer: _customer }) => {
+const ProfilePassword: React.FC<MyInformationProps> = ({
+  customer: _customer,
+}) => {
   const [successState, setSuccessState] = React.useState(false)
 
-  // TODO: Add support for password updates
+  // TODO: integrar com action server-side de atualização de senha quando
+  // o Medusa expor a rota correspondente.
   const updatePassword = async () => {
-    // TODO: Re-add toast notification when Toaster component is implemented
     console.info("Password update is not implemented")
   }
 
@@ -31,40 +32,62 @@ const ProfilePassword: React.FC<MyInformationProps> = ({ customer: _customer }) 
     >
       <AccountInfo
         label="Senha"
-        currentInfo={
-          <span>A senha não é exibida por motivos de segurança</span>
-        }
+        currentInfo={<span>A senha não é exibida por motivos de segurança</span>}
         isSuccess={successState}
         isError={false}
         errorMessage={undefined}
         clearState={clearState}
         data-testid="account-password-editor"
       >
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Senha atual"
-            name="old_password"
-            required
-            type="password"
-            data-testid="old-password-input"
-          />
-          <Input
-            label="Nova senha"
-            type="password"
-            name="new_password"
-            required
-            data-testid="new-password-input"
-          />
-          <Input
-            label="Confirmar senha"
-            type="password"
-            name="confirm_password"
-            required
-            data-testid="confirm-password-input"
-          />
+        <div className="grid grid-cols-1 small:grid-cols-3 gap-3">
+          <Field label="Senha atual" htmlFor="old_password">
+            <PasswordInput
+              id="old_password"
+              name="old_password"
+              required
+              autoComplete="current-password"
+              data-testid="old-password-input"
+            />
+          </Field>
+          <Field label="Nova senha" htmlFor="new_password">
+            <PasswordInput
+              id="new_password"
+              name="new_password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              data-testid="new-password-input"
+            />
+          </Field>
+          <Field label="Confirmar senha" htmlFor="confirm_password">
+            <PasswordInput
+              id="confirm_password"
+              name="confirm_password"
+              required
+              autoComplete="new-password"
+              data-testid="confirm-password-input"
+            />
+          </Field>
         </div>
       </AccountInfo>
     </form>
+  )
+}
+
+function Field({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string
+  htmlFor: string
+  children: React.ReactNode
+}) {
+  return (
+    <label htmlFor={htmlFor} className="flex flex-col gap-1.5">
+      <span className="text-brand-text text-sm font-medium">{label}</span>
+      {children}
+    </label>
   )
 }
 
