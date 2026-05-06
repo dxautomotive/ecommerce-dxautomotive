@@ -1,12 +1,12 @@
 /**
- * TrustSignals v2.1 (KaBuM-inspired).
+ * TrustSignals canônico (seção 13 do guide v2.1).
  *
- * Grid 2x2 (mobile) → 4 colunas (desktop) com fundo `gap-px` que
- * mostra divisores sutis entre cards. Cada card tem ícone grande
- * em quadrado com bg tintado da cor semântica.
+ * Grid 4 colunas com `gap-px bg-brand-border` criando divisores sutis.
+ * Usado em larguras cheias (carrinho, landings, depois de uma seção
+ * de produtos). Para a buy box estreita da PDP existe o trust signals
+ * vertical inline em `<BuyBox>` (seção 9.1).
  *
- * Renderizado logo abaixo do CTA "Adicionar ao carrinho" na PDP
- * para reforçar confiança no momento da decisão de compra.
+ * Em mobile/medium o grid degrada para 2 colunas.
  */
 const items = [
   {
@@ -37,11 +37,11 @@ const items = [
 
 const TrustSignals = () => {
   return (
-    <div className="grid grid-cols-2 gap-px bg-brand-border rounded-xl overflow-hidden mt-3">
+    <div className="grid grid-cols-2 large:grid-cols-4 gap-px bg-brand-border rounded-xl overflow-hidden">
       {items.map(({ icon, label, sub, bg }) => (
         <div
           key={label}
-          className="bg-brand-surface px-4 py-3.5 flex items-center gap-3"
+          className="bg-brand-surface px-4 py-4 flex items-center gap-3"
         >
           <div
             className={`w-9 h-9 rounded-md flex items-center justify-center text-[20px] flex-shrink-0 ${bg}`}
@@ -50,10 +50,10 @@ const TrustSignals = () => {
             {icon}
           </div>
           <div className="min-w-0">
-            <p className="text-[13px] font-bold text-brand-text leading-tight truncate">
+            <p className="text-[13px] font-bold text-brand-text leading-tight">
               {label}
             </p>
-            <p className="text-[11px] text-brand-text-2 leading-tight truncate">
+            <p className="text-[11px] text-brand-text-2 leading-tight">
               {sub}
             </p>
           </div>

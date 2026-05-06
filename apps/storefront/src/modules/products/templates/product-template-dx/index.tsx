@@ -9,8 +9,11 @@ import ProductTabsDX from "@modules/products/components/product-tabs-dx"
 import VehicleCompatibility from "@modules/products/components/vehicle-compatibility"
 import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
-import TrustBadges from "@modules/products/components/trust-badges"
-import ProductInfoPanel from "@modules/products/templates/product-info-panel"
+import TrustSignals from "@modules/products/components/trust-signals"
+import CompatibilityBadge from "@modules/products/components/compatibility-badge"
+import AiSummary from "@modules/products/components/ai-summary"
+import CompatibilityChecker from "@modules/products/components/compatibility-checker"
+import BuyBox from "@modules/products/components/buy-box"
 import ProductActionsWrapper from "../product-actions-wrapper"
 
 type Props = {
@@ -21,23 +24,19 @@ type Props = {
 }
 
 /**
- * Template DX da página de produto.
- * Layout (desktop):
- *   ┌──────────────────────────────────────────────┐
- *   │ Breadcrumb                                   │
- *   ├──────────────────────────┬───────────────────┤
- *   │ Gallery (sticky)         │ Info panel        │
- *   │                          │ (preço, compra,   │
- *   │                          │  whatsapp, frete) │
- *   ├──────────────────────────┴───────────────────┤
- *   │ Trust badges (4)                             │
- *   ├──────────────────────────────────────────────┤
- *   │ Tabs (descrição/specs/compat./avaliações)   │
- *   ├──────────────────────────────────────────────┤
- *   │ Related products                             │
- *   └──────────────────────────────────────────────┘
+ * Template DX da página de produto v2.1 (KaBuM 3 colunas).
  *
- * Mobile: tudo empilhado.
+ * Desktop (large+):
+ *   ┌──────────┬─────────────────────────┬──────────┐
+ *   │ Galeria  │ Info center             │ Buy Box  │
+ *   │ 480px    │ 1fr                     │ 320px    │
+ *   │          │ (título, ai, checker,   │ (sticky) │
+ *   │          │  tabs, compat-list)     │          │
+ *   └──────────┴─────────────────────────┴──────────┘
+ *
+ * Abaixo do grid: TrustSignals 4-col (full width) + Garantia + RelatedProducts.
+ *
+ * Mobile/medium: stack — ordem galeria → info → buy box.
  */
 export default function ProductTemplateDX({
   product,
@@ -49,30 +48,69 @@ export default function ProductTemplateDX({
     return notFound()
   }
 
+  const meta = (product.metadata ?? {}) as Record<string, unknown>
+  const sku = product.variants?.[0]?.sku
+  const aiSummaryItems = extractAiSummary(meta, product)
+
   return (
     <>
       <Breadcrumb product={product} />
 
       <section
-        className="content-container grid grid-cols-1 medium:grid-cols-12 gap-6 small:gap-10 py-6 small:py-10"
+        className="content-container grid grid-cols-1 large:grid-cols-[480px_1fr_320px] gap-6 small:gap-8 py-6 small:py-10"
         data-testid="product-container"
       >
-        <div className="medium:col-span-7 large:col-span-8">
+        <div>
           <ProductGalleryDX images={images} alt={product.title || ""} />
         </div>
 
-        <div className="medium:col-span-5 large:col-span-4">
-          <div className="medium:sticky medium:top-32 flex flex-col gap-6">
+        <div className="flex flex-col gap-5 min-w-0">
+          {product.collection?.title && (
+            <span className="text-brand-cyan text-[10px] uppercase tracking-[0.2em] font-bold">
+              {product.collection.title}
+            </span>
+          )}
+
+          <div>
+            <h1 className="text-2xl small:text-3xl font-extrabold text-brand-text leading-tight">
+              {product.title}
+            </h1>
+            {product.subtitle && (
+              <p className="text-brand-text-2 text-base mt-2">
+                {product.subtitle}
+              </p>
+            )}
+            {sku && (
+              <p className="text-brand-text-3 text-xs mt-2 uppercase tracking-wider">
+                SKU:{" "}
+                <span className="text-brand-text-2 font-mono">{sku}</span>
+              </p>
+            )}
+          </div>
+
+          <CompatibilityBadge metadata={meta as any} />
+
+          {aiSummaryItems.length > 0 && <AiSummary items={aiSummaryItems} />}
+
+          <CompatibilityChecker productId={product.id} />
+
+          <ProductTabsDX product={product} />
+
+          <VehicleCompatibility productId={product.id} />
+        </div>
+
+        <div>
+          <div className="large:sticky large:top-24">
             <Suspense
               fallback={
-                <ProductInfoPanel
+                <BuyBox
                   product={product}
                   region={region}
                   actionsSlot={null}
                 />
               }
             >
-              <ProductInfoPanel
+              <BuyBox
                 product={product}
                 region={region}
                 actionsSlot={
@@ -85,15 +123,7 @@ export default function ProductTemplateDX({
       </section>
 
       <section className="content-container py-6 small:py-10">
-        <TrustBadges />
-      </section>
-
-      <section className="content-container py-6 small:py-10">
-        <VehicleCompatibility productId={product.id} />
-      </section>
-
-      <section className="content-container py-6 small:py-10">
-        <ProductTabsDX product={product} />
+        <TrustSignals />
       </section>
 
       <GuaranteeHighlight />
@@ -110,22 +140,58 @@ export default function ProductTemplateDX({
   )
 }
 
+/**
+ * Extrai bullets pro AiSummary. Prioridade:
+ *   1. metadata.ai_summary (array de strings ou string com `\n`)
+ *   2. metadata.highlights (array)
+ *   3. fallback: extrai 2-3 frases curtas da descrição (heurística simples)
+ */
+function extractAiSummary(
+  meta: Record<string, unknown>,
+  product: HttpTypes.StoreProduct
+): string[] {
+  const fromMeta = meta.ai_summary ?? meta.highlights
+  if (Array.isArray(fromMeta) && fromMeta.length > 0) {
+    return fromMeta.filter((x): x is string => typeof x === "string")
+  }
+  if (typeof fromMeta === "string" && fromMeta.trim()) {
+    return fromMeta
+      .split(/\n+/)
+      .map((s) => s.replace(/^[-•*]\s*/, "").trim())
+      .filter(Boolean)
+  }
+
+  const desc = product.description?.trim()
+  if (!desc) return []
+  return desc
+    .split(/(?:[.!?]\s+|\n+)/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 25 && s.length < 180)
+    .slice(0, 4)
+}
+
 function Breadcrumb({ product }: { product: HttpTypes.StoreProduct }) {
   const cat = product.categories?.[0]
   return (
     <nav
       aria-label="Caminho de navegação"
-      className="content-container py-4 text-xs text-brand-muted"
+      className="content-container py-4 text-xs text-brand-text-3"
     >
       <ol className="flex items-center gap-2 flex-wrap">
         <li>
-          <LocalizedClientLink href="/" className="hover:text-brand-text transition-colors">
+          <LocalizedClientLink
+            href="/"
+            className="hover:text-brand-text transition-colors"
+          >
             Início
           </LocalizedClientLink>
         </li>
         <li aria-hidden="true">/</li>
         <li>
-          <LocalizedClientLink href="/store" className="hover:text-brand-text transition-colors">
+          <LocalizedClientLink
+            href="/store"
+            className="hover:text-brand-text transition-colors"
+          >
             Loja
           </LocalizedClientLink>
         </li>
@@ -143,7 +209,10 @@ function Breadcrumb({ product }: { product: HttpTypes.StoreProduct }) {
           </>
         )}
         <li aria-hidden="true">/</li>
-        <li className="text-brand-text font-medium truncate max-w-xs" title={product.title}>
+        <li
+          className="text-brand-text font-medium truncate max-w-xs"
+          title={product.title}
+        >
           {product.title}
         </li>
       </ol>
