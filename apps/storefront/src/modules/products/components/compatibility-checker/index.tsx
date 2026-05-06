@@ -122,9 +122,9 @@ export default function CompatibilityChecker({ productId }: Props) {
         Serve no meu carro?
       </p>
 
-      <div className="grid grid-cols-1 small:grid-cols-[1fr_1fr_1fr_auto] gap-2 small:items-end">
+      <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="text-[12px] font-semibold text-brand-text-2 block mb-1">
+          <label className="text-[11px] font-semibold text-brand-text-2 block mb-1">
             Marca
           </label>
           <select
@@ -141,7 +141,7 @@ export default function CompatibilityChecker({ productId }: Props) {
           </select>
         </div>
         <div>
-          <label className="text-[12px] font-semibold text-brand-text-2 block mb-1">
+          <label className="text-[11px] font-semibold text-brand-text-2 block mb-1">
             Modelo
           </label>
           <select
@@ -159,7 +159,7 @@ export default function CompatibilityChecker({ productId }: Props) {
           </select>
         </div>
         <div>
-          <label className="text-[12px] font-semibold text-brand-text-2 block mb-1">
+          <label className="text-[11px] font-semibold text-brand-text-2 block mb-1">
             Ano
           </label>
           <select
@@ -176,15 +176,15 @@ export default function CompatibilityChecker({ productId }: Props) {
             ))}
           </select>
         </div>
-        <button
-          type="button"
-          onClick={handleVerify}
-          disabled={!make || !model || !year || checking}
-          className="h-[42px] px-5 bg-grad-primary text-white font-bold text-[13px] rounded-md shadow-glow-sm hover:shadow-glow-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          {checking ? "Verificando..." : "Verificar"}
-        </button>
       </div>
+      <button
+        type="button"
+        onClick={handleVerify}
+        disabled={!make || !model || !year || checking}
+        className="w-full mt-2 h-[42px] px-5 bg-grad-primary text-white font-bold text-[13px] rounded-md shadow-glow-sm hover:shadow-glow-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+      >
+        {checking ? "Verificando..." : "Verificar compatibilidade"}
+      </button>
 
       {result?.status === "ok" && (
         <div className="mt-3 bg-brand-success/8 border border-brand-success/20 rounded-md p-3 flex items-center gap-2.5">

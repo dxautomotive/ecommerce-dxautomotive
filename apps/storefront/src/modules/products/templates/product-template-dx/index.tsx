@@ -26,13 +26,14 @@ type Props = {
 /**
  * Template DX da página de produto v2.1 (KaBuM 3 colunas).
  *
- * Desktop (large+):
- *   ┌──────────┬─────────────────────────┬──────────┐
- *   │ Galeria  │ Info center             │ Buy Box  │
- *   │ 480px    │ 1fr                     │ 320px    │
- *   │          │ (título, ai, checker,   │ (sticky) │
- *   │          │  tabs, compat-list)     │          │
- *   └──────────┴─────────────────────────┴──────────┘
+ * Proporção espelha a KaBuM real: grid 12-col com gap 32px.
+ *   ┌─────────────────┬──────────┬──────────┐
+ *   │ Galeria (6/12)  │ Info 3/12│ Buy 3/12 │
+ *   │ 50%             │ 25%      │ 25%      │
+ *   │                 │ (titulo, │ (sticky) │
+ *   │                 │  ai,     │          │
+ *   │                 │  tabs)   │          │
+ *   └─────────────────┴──────────┴──────────┘
  *
  * Abaixo do grid: TrustSignals 4-col (full width) + Garantia + RelatedProducts.
  *
@@ -57,14 +58,14 @@ export default function ProductTemplateDX({
       <Breadcrumb product={product} />
 
       <section
-        className="content-container grid grid-cols-1 large:grid-cols-[480px_1fr_320px] gap-6 small:gap-8 py-6 small:py-10"
+        className="content-container grid grid-cols-1 large:grid-cols-12 gap-6 large:gap-8 py-6 small:py-10"
         data-testid="product-container"
       >
-        <div>
+        <div className="large:col-span-6 min-w-0">
           <ProductGalleryDX images={images} alt={product.title || ""} />
         </div>
 
-        <div className="flex flex-col gap-5 min-w-0">
+        <div className="large:col-span-3 flex flex-col gap-5 min-w-0">
           {product.collection?.title && (
             <span className="text-brand-cyan text-[10px] uppercase tracking-[0.2em] font-bold">
               {product.collection.title}
@@ -99,7 +100,7 @@ export default function ProductTemplateDX({
           <VehicleCompatibility productId={product.id} />
         </div>
 
-        <div>
+        <div className="large:col-span-3 min-w-0">
           <div className="large:sticky large:top-24">
             <Suspense
               fallback={
