@@ -14,6 +14,7 @@ import CompatibilityBadge from "@modules/products/components/compatibility-badge
 import AiSummary from "@modules/products/components/ai-summary"
 import CompatibilityChecker from "@modules/products/components/compatibility-checker"
 import BuyBox from "@modules/products/components/buy-box"
+import RatingSummary from "@modules/products/components/rating-summary"
 import ProductActionsWrapper from "../product-actions-wrapper"
 
 type Props = {
@@ -88,6 +89,8 @@ export default function ProductTemplateDX({
               </p>
             )}
           </div>
+
+          <RatingSummary productId={product.id} />
 
           <CompatibilityBadge metadata={meta as any} />
 

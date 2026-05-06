@@ -1,7 +1,7 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import ProductReviews from "@modules/products/components/product-reviews"
 
 type Tab = "descricao" | "especificacoes" | "compatibilidade" | "avaliacoes"
@@ -31,6 +31,24 @@ type Props = {
 export default function ProductTabsDX({ product }: Props) {
   const [tab, setTab] = useState<Tab>("descricao")
   const meta = (product.metadata ?? {}) as Metadata
+
+  // Permite que outros componentes (ex.: <RatingSummary> no topo da PDP) abram
+  // uma tab específica via `window.dispatchEvent(new CustomEvent("dx:show-tab", { detail: "avaliacoes" }))`.
+  useEffect(() => {
+    const onShowTab = (e: Event) => {
+      const detail = (e as CustomEvent<string>).detail
+      if (
+        detail === "descricao" ||
+        detail === "especificacoes" ||
+        detail === "compatibilidade" ||
+        detail === "avaliacoes"
+      ) {
+        setTab(detail)
+      }
+    }
+    window.addEventListener("dx:show-tab", onShowTab)
+    return () => window.removeEventListener("dx:show-tab", onShowTab)
+  }, [])
 
   const tabs = [
     { id: "descricao" as const, label: "Descrição" },
