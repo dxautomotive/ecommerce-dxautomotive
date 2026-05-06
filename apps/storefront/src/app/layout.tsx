@@ -1,3 +1,4 @@
+import Toaster from "@modules/common/components/toaster"
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
 import { Barlow_Condensed, Inter } from "next/font/google"
@@ -36,6 +37,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
     >
       <body className="bg-brand-bg text-brand-text antialiased font-sans">
         <main className="relative">{props.children}</main>
+        <Toaster />
       </body>
     </html>
   )
