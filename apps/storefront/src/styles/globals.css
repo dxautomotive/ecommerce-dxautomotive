@@ -3,22 +3,71 @@
 @import "tailwindcss/utilities";
 
 /* ──────────────────────────────────────────────────────────────────
-   DX Automotive — Tokens globais (paleta, fonte, dark theme)
-   Veja PRD §2 e ADR-002.
+   DX Automotive — Design System v2.1 (KaBuM-inspired)
+   Fonte da verdade: DX_Automotive_Implementation_Guide.md
    ────────────────────────────────────────────────────────────────── */
+
 :root {
-  --brand-bg: #0a0a0a;
-  --brand-surface: #141414;
-  --brand-border: #222222;
-  --brand-primary: #0066ff;
-  --brand-primary-hover: #0052cc;
-  --brand-text: #ffffff;
-  --brand-muted: #a0a0a0;
-  --brand-success: #00c851;
-  --brand-warning: #ff6b00;
-  --brand-danger: #ff3d3d;
-  --brand-pix: #32bcad;
-  --brand-whatsapp: #25d366;
+  /* ── Fundos (azul-preto oficial da marca) ──────────────────── */
+  --brand-bg:           #050810;
+  --brand-bg-deep:      #030610;
+  --brand-surface:      #0D1528;
+  --brand-surface-2:    #111E34;
+  --brand-surface-3:    #162540;
+
+  /* ── Bordas ────────────────────────────────────────────────── */
+  --brand-border:       #1A2540;
+  --brand-border-2:     #243050;
+
+  /* ── Primária: azul elétrico do feixe do logo ──────────────── */
+  --brand-primary:      #0088FF;
+  --brand-primary-h:    #0066DD;
+  --brand-primary-d:    #0044CC;
+
+  /* ── Cyan: núcleo brilhante do feixe ───────────────────────── */
+  --brand-cyan:         #00CCFF;
+
+  /* ── Silver: cor "AUTO" no logo ───────────────────────────── */
+  --brand-silver:       #8AADCC;
+  --brand-silver-dim:   #4A6880;
+
+  /* ── Texto ─────────────────────────────────────────────────── */
+  --brand-text:         #E8F0F8;
+  --brand-text-2:       #8AADCC;
+  --brand-text-3:       #4A6880;
+
+  /* ── Semânticas ────────────────────────────────────────────── */
+  --brand-success:      #00C851;
+  --brand-warning:      #FF6B00;
+  --brand-danger:       #FF3D3D;
+
+  /* ── BR-específico ─────────────────────────────────────────── */
+  --brand-pix:          #32BCAD;
+  --brand-wpp:          #25D366;
+  --brand-wpp-hover:    #1DA851;
+
+  /* ── Avaliações ────────────────────────────────────────────── */
+  --brand-star:         #FFB800;
+
+  /* ── Gradientes oficiais ───────────────────────────────────── */
+  --grad-primary:       linear-gradient(135deg, #0099FF 0%, #0055DD 100%);
+  --grad-electric:      linear-gradient(90deg, #00CCFF 0%, #0088FF 50%, #0044CC 100%);
+  --grad-chrome:        linear-gradient(160deg, #F0F2F5 0%, #C4C8D0 30%, #8090A0 60%, #3A4050 100%);
+  --grad-bg-deep:       linear-gradient(135deg, #0D1528 0%, #050810 100%);
+
+  /* ── Glow (box-shadow) ─────────────────────────────────────── */
+  --glow-primary:       0 0 20px rgba(0,136,255,.25), 0 0 40px rgba(0,100,220,.12);
+  --glow-cyan:          0 0 16px rgba(0,204,255,.30), 0 0 32px rgba(0,136,255,.15);
+  --glow-sm:            0 2px 12px rgba(0,120,255,.30);
+
+  /* ── Sombras ───────────────────────────────────────────────── */
+  --shadow-sm:          0 1px 4px rgba(0,0,0,.6);
+  --shadow-md:          0 4px 20px rgba(0,0,0,.7);
+  --shadow-lg:          0 8px 40px rgba(0,0,0,.8);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html.dark {
@@ -30,7 +79,24 @@ html.dark {
 body {
   background-color: var(--brand-bg);
   color: var(--brand-text);
+  font-family: "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
   font-feature-settings: "ss01", "ss02", "cv01", "cv11";
+}
+
+/* Focus ring acessível padrão DX */
+:focus-visible {
+  outline: 2px solid rgba(0, 136, 255, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Inputs sobrescrevem o focus-visible global (evita dupla marcação) */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  box-shadow: none;
 }
 
 @layer utilities {
@@ -77,6 +143,23 @@ body {
   input[type="search"]::-webkit-search-results-button,
   input[type="search"]::-webkit-search-results-decoration {
     -webkit-appearance: none;
+  }
+
+  /* Utilities pra preço Pix com gradiente elétrico (KaBuM signature) */
+  .text-grad-electric {
+    background: var(--grad-electric);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .text-grad-chrome {
+    background: var(--grad-chrome);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
   }
 }
 
