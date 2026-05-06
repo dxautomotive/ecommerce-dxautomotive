@@ -32,5 +32,12 @@ export default defineMiddlewares({
       matcher: "/store/page-builder/:template",
       method: ["GET"],
     },
+    {
+      // POST de review aceita até 4 imagens base64 dataURL no body —
+      // ~5MB cada após base64 = ~6.7MB; multiplica por 4 = ~27MB. 32MB de folga.
+      matcher: "/store/products/:id/reviews",
+      method: ["POST"],
+      bodyParser: { sizeLimit: "32mb" },
+    },
   ],
 })

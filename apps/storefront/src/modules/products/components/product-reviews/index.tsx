@@ -1,7 +1,7 @@
 "use client"
 
 import Image from "next/image"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 const BACKEND_URL =
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9001"
@@ -12,6 +12,8 @@ const apiHeaders: HeadersInit | undefined = PUBLISHABLE_KEY
   : undefined
 
 const HELPFUL_KEY = "dx:reviews-helpful"
+const MAX_IMAGES = 4
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024 // 5MB cada, antes do server reduzir pra WebP
 
 const readHelpfulVoted = (): string[] => {
   if (typeof window === "undefined") return []
@@ -30,6 +32,16 @@ const markHelpfulVoted = (id: string) => {
   window.localStorage.setItem(HELPFUL_KEY, JSON.stringify([...cur, id]))
 }
 
+const fileToDataUrl = (file: File): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+
+const absUrl = (u: string) => (u.startsWith("/") ? `${BACKEND_URL}${u}` : u)
+
 type Review = {
   id: string
   rating: number
@@ -46,7 +58,19 @@ type Summary = {
   total: number
   average: number
   distribution: Record<1 | 2 | 3 | 4 | 5, number>
+  with_media: number
+  without_media: number
 }
+
+type FilterMode =
+  | "all"
+  | "with_media"
+  | "without_media"
+  | "rating_5"
+  | "rating_4"
+  | "rating_3"
+  | "rating_2"
+  | "rating_1"
 
 type Props = {
   productId: string
@@ -81,25 +105,32 @@ const Stars = ({ rating, size = 13 }: { rating: number; size?: number }) => {
 }
 
 /**
- * ProductReviews — section dedicada de avaliações na PDP (KaBuM-style).
+ * ProductReviews — section de avaliações da PDP (KaBuM/Shopee-style).
  *
- * Layout:
- *  - Header com nota média + distribuição por estrela + botão "Escrever avaliação"
- *  - Grid de cards (2 colunas em desktop, 1 em mobile) — cada card individual,
- *    bordado, com avatar de iniciais + nome + estrelas + data + título + texto +
- *    galeria de fotos (se tiver) + botão "Útil (N)"
- *
- * Empty state convida o cliente a escrever.
+ * Features:
+ *  - Resumo com nota média + distribuição por estrela
+ *  - Filtros chips (Tudo · ★5–★1 · Com mídia · Sem mídia) com contagens
+ *  - Cards individuais em grid 2 colunas com avatar/nome/estrelas/data/texto
+ *  - Galeria de imagens por review (max 4) com lightbox no click
+ *  - Voto "Útil" otimista persistido em localStorage (sem auth)
+ *  - Form de escrever review com upload de até 4 imagens (até 5MB cada)
+ *    convertidas server-side pra WebP via sharp
  */
 export default function ProductReviews({ productId }: Props) {
-  const [reviews, setReviews] = useState<Review[]>([])
+  const [allReviews, setAllReviews] = useState<Review[]>([])
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState<FilterMode>("all")
+  const [voted, setVoted] = useState<string[]>([])
+  const [lightbox, setLightbox] = useState<{ urls: string[]; index: number } | null>(
+    null
+  )
+
+  // Form
   const [writing, setWriting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  const [voted, setVoted] = useState<string[]>([])
   const [form, setForm] = useState({
     rating: 5,
     title: "",
@@ -107,18 +138,20 @@ export default function ProductReviews({ productId }: Props) {
     author_name: "",
     author_email: "",
   })
+  const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([])
 
   useEffect(() => {
     setVoted(readHelpfulVoted())
     let active = true
     setLoading(true)
-    fetch(`${BACKEND_URL}/store/products/${productId}/reviews`, {
+    fetch(`${BACKEND_URL}/store/products/${productId}/reviews?limit=50`, {
       headers: apiHeaders,
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!active || !data) return
-        setReviews(data.reviews ?? [])
+        setAllReviews(data.reviews ?? [])
         setSummary(data.summary ?? null)
       })
       .catch(() => undefined)
@@ -130,6 +163,44 @@ export default function ProductReviews({ productId }: Props) {
     }
   }, [productId])
 
+  // Limpa object URLs quando imageFiles muda (evita memory leak)
+  useEffect(() => {
+    return () => {
+      imagePreviewUrls.forEach((u) => URL.revokeObjectURL(u))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const onPickFiles = (files: FileList | null) => {
+    if (!files) return
+    const incoming = Array.from(files)
+    const slot = MAX_IMAGES - imageFiles.length
+    const accepted: File[] = []
+    for (const f of incoming.slice(0, slot)) {
+      if (!f.type.startsWith("image/")) continue
+      if (f.size > MAX_IMAGE_BYTES) {
+        setErr(`A imagem "${f.name}" excede 5MB. Tente outra.`)
+        continue
+      }
+      accepted.push(f)
+    }
+    if (accepted.length === 0) return
+    setImageFiles((prev) => [...prev, ...accepted])
+    setImagePreviewUrls((prev) => [
+      ...prev,
+      ...accepted.map((f) => URL.createObjectURL(f)),
+    ])
+  }
+
+  const removeImage = (idx: number) => {
+    setImageFiles((prev) => prev.filter((_, i) => i !== idx))
+    setImagePreviewUrls((prev) => {
+      const removed = prev[idx]
+      if (removed) URL.revokeObjectURL(removed)
+      return prev.filter((_, i) => i !== idx)
+    })
+  }
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErr(null)
@@ -139,6 +210,9 @@ export default function ProductReviews({ productId }: Props) {
     }
     setSubmitting(true)
     try {
+      const imagesDataUrls = await Promise.all(
+        imageFiles.map((f) => fileToDataUrl(f))
+      )
       const res = await fetch(
         `${BACKEND_URL}/store/products/${productId}/reviews`,
         {
@@ -150,6 +224,7 @@ export default function ProductReviews({ productId }: Props) {
             body: form.body.trim(),
             author_name: form.author_name.trim(),
             author_email: form.author_email.trim() || undefined,
+            images: imagesDataUrls,
           }),
         }
       )
@@ -167,6 +242,9 @@ export default function ProductReviews({ productId }: Props) {
         author_name: "",
         author_email: "",
       })
+      imagePreviewUrls.forEach((u) => URL.revokeObjectURL(u))
+      setImageFiles([])
+      setImagePreviewUrls([])
     } finally {
       setSubmitting(false)
     }
@@ -174,8 +252,7 @@ export default function ProductReviews({ productId }: Props) {
 
   const voteHelpful = async (id: string) => {
     if (voted.includes(id)) return
-    // Otimista: incrementa local imediato + marca votado
-    setReviews((prev) =>
+    setAllReviews((prev) =>
       prev.map((r) =>
         r.id === id ? { ...r, helpful_count: r.helpful_count + 1 } : r
       )
@@ -188,9 +265,31 @@ export default function ProductReviews({ productId }: Props) {
         headers: apiHeaders,
       })
     } catch {
-      // best-effort; em produção tratar rollback se o servidor falhar
+      // best-effort
     }
   }
+
+  // Filtragem client-side (a lista de até 50 já vem completa, suficiente em escala atual)
+  const filtered = useMemo(() => {
+    switch (filter) {
+      case "with_media":
+        return allReviews.filter((r) => r.images && r.images.length > 0)
+      case "without_media":
+        return allReviews.filter((r) => !r.images || r.images.length === 0)
+      case "rating_5":
+        return allReviews.filter((r) => Math.round(r.rating) === 5)
+      case "rating_4":
+        return allReviews.filter((r) => Math.round(r.rating) === 4)
+      case "rating_3":
+        return allReviews.filter((r) => Math.round(r.rating) === 3)
+      case "rating_2":
+        return allReviews.filter((r) => Math.round(r.rating) === 2)
+      case "rating_1":
+        return allReviews.filter((r) => Math.round(r.rating) === 1)
+      default:
+        return allReviews
+    }
+  }, [allReviews, filter])
 
   if (loading) {
     return (
@@ -200,9 +299,25 @@ export default function ProductReviews({ productId }: Props) {
     )
   }
 
+  const total = summary?.total ?? 0
+  const dist = summary?.distribution ?? { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+  const withMedia = summary?.with_media ?? 0
+  const withoutMedia = summary?.without_media ?? 0
+
+  const filterChips: { id: FilterMode; label: string; count: number }[] = [
+    { id: "all", label: "Tudo", count: total },
+    { id: "with_media", label: "Com mídia", count: withMedia },
+    { id: "without_media", label: "Sem mídia", count: withoutMedia },
+    { id: "rating_5", label: "5 ★", count: dist[5] },
+    { id: "rating_4", label: "4 ★", count: dist[4] },
+    { id: "rating_3", label: "3 ★", count: dist[3] },
+    { id: "rating_2", label: "2 ★", count: dist[2] },
+    { id: "rating_1", label: "1 ★", count: dist[1] },
+  ]
+
   return (
     <div className="flex flex-col gap-6">
-      {summary && summary.total > 0 ? (
+      {summary && total > 0 ? (
         <div className="grid grid-cols-1 small:grid-cols-[200px_1fr] gap-6 small:gap-8 items-start pb-6 border-b border-brand-border">
           <div className="flex flex-col items-center small:items-start gap-1">
             <p className="text-[40px] font-black text-brand-text leading-none">
@@ -210,16 +325,13 @@ export default function ProductReviews({ productId }: Props) {
             </p>
             <Stars rating={summary.average} size={18} />
             <p className="text-[12px] text-brand-text-2 mt-1">
-              {summary.total} avaliaç{summary.total === 1 ? "ão" : "ões"}
+              {total} avaliaç{total === 1 ? "ão" : "ões"}
             </p>
           </div>
           <div className="flex flex-col gap-1.5">
             {([5, 4, 3, 2, 1] as const).map((star) => {
-              const c = summary.distribution[star] ?? 0
-              const pct =
-                summary.total > 0
-                  ? Math.round((c / summary.total) * 100)
-                  : 0
+              const c = dist[star] ?? 0
+              const pct = total > 0 ? Math.round((c / total) * 100) : 0
               return (
                 <div
                   key={star}
@@ -232,9 +344,7 @@ export default function ProductReviews({ productId }: Props) {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="w-10 text-right text-brand-text-3">
-                    {c}
-                  </span>
+                  <span className="w-10 text-right text-brand-text-3">{c}</span>
                 </div>
               )
             })}
@@ -251,11 +361,33 @@ export default function ProductReviews({ productId }: Props) {
         </div>
       )}
 
+      {total > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {filterChips
+            .filter((c) => c.count > 0 || c.id === "all")
+            .map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                onClick={() => setFilter(chip.id)}
+                className={`text-[12px] font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+                  filter === chip.id
+                    ? "bg-brand-primary/15 border-brand-primary text-brand-primary"
+                    : "bg-brand-surface-2 border-brand-border text-brand-text-2 hover:border-brand-border-2 hover:text-brand-text"
+                }`}
+              >
+                {chip.label}{" "}
+                <span className="text-brand-text-3">({chip.count})</span>
+              </button>
+            ))}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="text-[14px] font-bold text-brand-text">
-          {reviews.length > 0
-            ? `${reviews.length} comentário${reviews.length === 1 ? "" : "s"}`
-            : "Comentários"}
+          {filtered.length > 0
+            ? `${filtered.length} comentário${filtered.length === 1 ? "" : "s"}`
+            : "Nenhum comentário com esse filtro"}
         </h3>
         {!writing && !submitted && (
           <button
@@ -323,6 +455,55 @@ export default function ProductReviews({ productId }: Props) {
             rows={4}
             className="bg-brand-surface border border-brand-border rounded-md text-brand-text text-[13px] px-3 py-2.5 placeholder:text-brand-text-3 focus:border-brand-primary/50 focus:outline-none resize-y"
           />
+
+          <div className="flex flex-col gap-2">
+            <label className="text-[12px] font-semibold text-brand-text-2">
+              Fotos (até {MAX_IMAGES}, máx 5MB cada — convertemos pra WebP)
+            </label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {imagePreviewUrls.map((url, i) => (
+                <div
+                  key={url}
+                  className="relative w-16 h-16 rounded-md overflow-hidden border border-brand-border bg-brand-surface group"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Pré-visualização ${i + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(i)}
+                    aria-label="Remover imagem"
+                    className="absolute top-0 right-0 w-5 h-5 bg-black/70 text-white text-[10px] rounded-bl-md leading-none hover:bg-brand-danger transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {imageFiles.length < MAX_IMAGES && (
+                <label className="w-16 h-16 rounded-md border border-dashed border-brand-border-2 hover:border-brand-primary cursor-pointer text-brand-text-3 hover:text-brand-primary transition-colors flex flex-col items-center justify-center gap-0.5">
+                  <PlusIcon />
+                  <span className="text-[10px]">Adicionar</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                    multiple
+                    className="sr-only"
+                    onChange={(e) => {
+                      onPickFiles(e.target.files)
+                      e.target.value = ""
+                    }}
+                  />
+                </label>
+              )}
+            </div>
+            <p className="text-[11px] text-brand-text-3">
+              Vídeos serão suportados em breve, quando ativarmos a infra de mídia.
+            </p>
+          </div>
+
           <input
             value={form.author_email}
             onChange={(e) =>
@@ -356,10 +537,11 @@ export default function ProductReviews({ productId }: Props) {
         </form>
       )}
 
-      {reviews.length > 0 && (
+      {filtered.length > 0 && (
         <div className="grid grid-cols-1 medium:grid-cols-2 gap-3">
-          {reviews.map((review) => {
+          {filtered.map((review) => {
             const hasVoted = voted.includes(review.id)
+            const imgs = (review.images ?? []).map(absUrl)
             return (
               <article
                 key={review.id}
@@ -403,15 +585,15 @@ export default function ProductReviews({ productId }: Props) {
                   {review.body}
                 </p>
 
-                {review.images && review.images.length > 0 && (
+                {imgs.length > 0 && (
                   <div className="flex gap-2 flex-wrap">
-                    {review.images.slice(0, 4).map((url, i) => (
-                      <a
+                    {imgs.slice(0, 4).map((url, i) => (
+                      <button
                         key={i}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="relative w-16 h-16 rounded-md overflow-hidden bg-brand-surface border border-brand-border hover:border-brand-primary transition-colors"
+                        type="button"
+                        onClick={() => setLightbox({ urls: imgs, index: i })}
+                        aria-label={`Ampliar foto ${i + 1}`}
+                        className="relative w-16 h-16 rounded-md overflow-hidden bg-brand-surface border border-brand-border hover:border-brand-primary transition-colors cursor-zoom-in"
                       >
                         <Image
                           src={url}
@@ -420,7 +602,7 @@ export default function ProductReviews({ productId }: Props) {
                           sizes="64px"
                           className="object-cover"
                         />
-                      </a>
+                      </button>
                     ))}
                   </div>
                 )}
@@ -445,6 +627,81 @@ export default function ProductReviews({ productId }: Props) {
           })}
         </div>
       )}
+
+      {lightbox && (
+        <ReviewLightbox
+          urls={lightbox.urls}
+          initialIndex={lightbox.index}
+          onClose={() => setLightbox(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function ReviewLightbox({
+  urls,
+  initialIndex,
+  onClose,
+}: {
+  urls: string[]
+  initialIndex: number
+  onClose: () => void
+}) {
+  const [index, setIndex] = useState(initialIndex)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose()
+      if (e.key === "ArrowRight") setIndex((i) => (i + 1) % urls.length)
+      if (e.key === "ArrowLeft")
+        setIndex((i) => (i - 1 + urls.length) % urls.length)
+    }
+    window.addEventListener("keydown", onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      document.body.style.overflow = prev
+    }
+  }, [urls.length, onClose])
+
+  const current = urls[index]
+  if (!current) return null
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Foto ampliada da avaliação"
+      className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 small:p-8"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Fechar"
+        className="absolute top-5 right-5 w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors z-10"
+      >
+        <CloseIcon />
+      </button>
+
+      <div
+        className="relative w-full h-full max-w-[1100px] max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Image
+          src={current}
+          alt={`Foto ${index + 1} de ${urls.length}`}
+          fill
+          sizes="100vw"
+          className="object-contain"
+          priority
+        />
+        <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur text-white text-sm font-semibold px-3 py-1 rounded">
+          {index + 1} / {urls.length}
+        </div>
+      </div>
     </div>
   )
 }
@@ -463,6 +720,44 @@ function ThumbsUpIcon({ filled }: { filled: boolean }) {
       aria-hidden="true"
     >
       <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+    </svg>
+  )
+}
+
+function PlusIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   )
 }

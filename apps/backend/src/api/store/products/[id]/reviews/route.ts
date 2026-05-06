@@ -3,6 +3,10 @@ import {
   MedusaResponse,
 } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, Modules } from "@medusajs/framework/utils"
+import sharp from "sharp"
+import { promises as fs } from "fs"
+import path from "path"
+import crypto from "crypto"
 import { PRODUCT_REVIEWS_MODULE } from "../../../../../modules/product_reviews"
 import ProductReviewsModuleService from "../../../../../modules/product_reviews/service"
 
@@ -12,6 +16,12 @@ type CreateReviewBody = {
   body?: string
   author_name?: string
   author_email?: string
+  /**
+   * Imagens em formato dataURL (`data:image/jpeg;base64,...`). Máx 4 arquivos,
+   * 5MB cada antes da decodificação. Server processa com sharp:
+   * resize até 1280px (preservando proporção) + WebP quality 82.
+   */
+  images?: string[]
 }
 
 const sanitize = (s: unknown, max = 2000): string | null => {
@@ -20,13 +30,77 @@ const sanitize = (s: unknown, max = 2000): string | null => {
   return trimmed.length > 0 ? trimmed : null
 }
 
+const MAX_IMAGES = 4
+const MAX_IMAGE_BYTES_RAW = 5 * 1024 * 1024 // 5MB cada antes da conversão
+const TARGET_DIM = 1280
+const WEBP_QUALITY = 82
+
+const UPLOADS_DIR = path.join(process.cwd(), "static", "uploads", "reviews")
+
+/**
+ * Decodifica dataURL `data:image/...;base64,XXXX` → Buffer.
+ * Aceita JPEG/PNG/HEIC/WebP. Rejeita o resto.
+ */
+function decodeDataUrl(s: string): Buffer | null {
+  const m = /^data:image\/(jpeg|jpg|png|webp|heic|heif);base64,(.+)$/i.exec(
+    s.trim()
+  )
+  if (!m) return null
+  try {
+    return Buffer.from(m[2], "base64")
+  } catch {
+    return null
+  }
+}
+
+async function processAndSaveImage(
+  dataUrl: string,
+  reviewId: string,
+  idx: number
+): Promise<string | null> {
+  const raw = decodeDataUrl(dataUrl)
+  if (!raw) return null
+  if (raw.length > MAX_IMAGE_BYTES_RAW) return null
+
+  // Garante que o diretório existe
+  await fs.mkdir(UPLOADS_DIR, { recursive: true })
+
+  // Hash do conteúdo pra dedupe + nome estável
+  const hash = crypto
+    .createHash("sha1")
+    .update(raw)
+    .digest("hex")
+    .slice(0, 10)
+
+  const filename = `${reviewId}-${idx}-${hash}.webp`
+  const filepath = path.join(UPLOADS_DIR, filename)
+
+  await sharp(raw)
+    .rotate() // respeita EXIF orientation, depois remove EXIF
+    .resize({
+      width: TARGET_DIM,
+      height: TARGET_DIM,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality: WEBP_QUALITY })
+    .toFile(filepath)
+
+  return `/uploads/reviews/${filename}`
+}
+
 /**
  * GET /store/products/:id/reviews
  *
  * Lista reviews **aprovadas** do produto (status=approved). Ordenadas por
- * `created_at DESC`. Inclui um pequeno agregado `summary` (count + média).
+ * `created_at DESC`. Inclui um pequeno agregado `summary` (count + média +
+ * distribuição por estrela + with_media_count).
  *
- * Aceita ?limit/?offset (max 50).
+ * Filtros:
+ *  - ?with_media=true  → só reviews que têm pelo menos 1 imagem/vídeo
+ *  - ?with_media=false → só reviews sem mídia
+ *  - ?rating=5         → filtra por nota exata (1-5)
+ *  - ?limit/?offset
  */
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const service = req.scope.resolve<ProductReviewsModuleService>(
@@ -35,17 +109,19 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 
   const limit = Math.min(parseInt((req.query.limit as string) ?? "20", 10), 50)
   const offset = parseInt((req.query.offset as string) ?? "0", 10)
+  const withMedia = req.query.with_media as string | undefined
+  const ratingFilter =
+    typeof req.query.rating === "string" && /^[1-5]$/.test(req.query.rating)
+      ? Number(req.query.rating)
+      : null
 
-  const [reviews, count] = await service.listAndCountReviews(
-    { product_id: req.params.id, status: "approved" },
-    { take: limit, skip: offset, order: { created_at: "DESC" } as never }
-  )
-
-  // Agregado leve da nota média + distribuição por estrela
+  // Pega TODAS aprovadas (até 5000) — usa pra summary, distribution, with_media_count
+  // e como base do filtro client-style. Em escala maior, virar query SQL com filtros.
   const allApproved = await service.listReviews(
     { product_id: req.params.id, status: "approved" },
-    { take: 5000 }
+    { take: 5000, order: { created_at: "DESC" } as never }
   )
+
   const total = allApproved.length
   const avg =
     total === 0
@@ -60,13 +136,38 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
     4: 0,
     5: 0,
   }
+  let withMediaCount = 0
   for (const r of allApproved) {
     const k = Math.max(1, Math.min(5, Math.round(r.rating ?? 0))) as 1 | 2 | 3 | 4 | 5
     distribution[k]++
+    const imgs = (r as unknown as { images?: unknown }).images
+    if (Array.isArray(imgs) && imgs.length > 0) withMediaCount++
   }
 
+  // Aplica filtros e paginação
+  let filtered = allApproved
+  if (ratingFilter !== null) {
+    filtered = filtered.filter(
+      (r) => Math.round(r.rating ?? 0) === ratingFilter
+    )
+  }
+  if (withMedia === "true") {
+    filtered = filtered.filter((r) => {
+      const imgs = (r as unknown as { images?: unknown }).images
+      return Array.isArray(imgs) && imgs.length > 0
+    })
+  } else if (withMedia === "false") {
+    filtered = filtered.filter((r) => {
+      const imgs = (r as unknown as { images?: unknown }).images
+      return !Array.isArray(imgs) || imgs.length === 0
+    })
+  }
+
+  const count = filtered.length
+  const paged = filtered.slice(offset, offset + limit)
+
   return res.json({
-    reviews: reviews.map((r) => ({
+    reviews: paged.map((r) => ({
       id: r.id,
       rating: r.rating,
       title: r.title,
@@ -80,7 +181,13 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       created_at: (r as unknown as { created_at?: Date }).created_at,
     })),
     count,
-    summary: { total, average: avg, distribution },
+    summary: {
+      total,
+      average: avg,
+      distribution,
+      with_media: withMediaCount,
+      without_media: total - withMediaCount,
+    },
     limit,
     offset,
   })
@@ -90,8 +197,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
  * POST /store/products/:id/reviews
  *
  * Endpoint público pra cliente postar review. Sempre cai com status `pending`
- * (admin modera depois). Faz sanitização básica de tamanho. Sem auth — o
- * front-end pode passar `author_email` mas é opcional.
+ * (admin modera depois). Aceita até 4 imagens em base64 dataURL no campo
+ * `images[]` — server processa com sharp e salva como WebP. Vídeos virão
+ * quando a infra (R2 + ffmpeg) estiver disponível.
  *
  * Cria também o link Product↔Review pra que `query.graph` consiga retornar.
  */
@@ -129,6 +237,7 @@ export async function POST(
     })
   }
 
+  // Cria review primeiro pra ter um id estável que vira parte do filename
   const [review] = await service.createReviews([
     {
       product_id: req.params.id,
@@ -147,7 +256,26 @@ export async function POST(
     [PRODUCT_REVIEWS_MODULE]: { review_id: review.id },
   })
 
-  return res
-    .status(201)
-    .json({ id: review.id, status: review.status, message: "Avaliação enviada para moderação" })
+  // Processa imagens (best-effort: se uma falhar, ignora)
+  const incomingImages = Array.isArray(b.images)
+    ? b.images.slice(0, MAX_IMAGES).filter((s) => typeof s === "string")
+    : []
+  const savedUrls: string[] = []
+  for (let i = 0; i < incomingImages.length; i++) {
+    const url = await processAndSaveImage(incomingImages[i], review.id, i).catch(
+      () => null
+    )
+    if (url) savedUrls.push(url)
+  }
+
+  if (savedUrls.length > 0) {
+    await service.updateReviews({ id: review.id, images: savedUrls })
+  }
+
+  return res.status(201).json({
+    id: review.id,
+    status: review.status,
+    images_processed: savedUrls.length,
+    message: "Avaliação enviada para moderação",
+  })
 }
