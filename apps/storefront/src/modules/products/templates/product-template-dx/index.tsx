@@ -70,7 +70,7 @@ export default function ProductTemplateDX({
       <Breadcrumb product={product} />
 
       <section
-        className="content-container grid grid-cols-1 large:grid-cols-12 gap-6 large:gap-8 pt-2 pb-6 small:pb-10"
+        className="content-container grid grid-cols-1 large:grid-cols-12 gap-6 large:gap-8 pt-2 pb-3"
         data-testid="product-container"
       >
         <div className="large:col-span-6 min-w-0">
@@ -144,7 +144,7 @@ export default function ProductTemplateDX({
         </div>
       </section>
 
-      <section className="content-container py-3 small:py-5">
+      <section className="content-container py-3">
         <BundleSection
           product={
             {
@@ -164,7 +164,7 @@ export default function ProductTemplateDX({
 
       <section
         id="produto-detalhes"
-        className="content-container scroll-mt-24 py-6 small:py-10 flex flex-col gap-8"
+        className="content-container scroll-mt-24 pt-3 pb-6 small:pb-10 flex flex-col gap-8"
       >
         <ProductTabsDX product={product} />
         <VehicleCompatibility productId={product.id} />
