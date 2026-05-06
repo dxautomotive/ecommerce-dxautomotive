@@ -11,6 +11,12 @@ type Quote = {
 type Props = {
   /** Peso do produto em gramas; se null, usa default 2000g */
   weightGrams?: number | null
+  /**
+   * Modo compacto: sem wrapper card, sem header/icone separados, input+botão
+   * empilhados em rows (2 linhas) pra caber em colunas estreitas (ex.: BuyBox 320px).
+   * O pai vira o "card".
+   */
+  compact?: boolean
 }
 
 /**
@@ -23,7 +29,7 @@ type Props = {
  * o backend tiver fulfillment provider Correios configurado — por ora,
  * é uma estimativa client-side suficiente para a página de produto.
  */
-export default function FreteCalculator({ weightGrams }: Props) {
+export default function FreteCalculator({ weightGrams, compact }: Props) {
   const [cep, setCep] = useState("")
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
@@ -58,19 +64,23 @@ export default function FreteCalculator({ weightGrams }: Props) {
     }
   }
 
+  const wrapperClass = compact
+    ? "bg-brand-surface-2 border border-brand-border rounded-md p-3.5 flex flex-col gap-3"
+    : "bg-brand-surface border border-brand-border rounded-lg p-4 flex flex-col gap-3"
+
   return (
-    <div className="bg-brand-surface border border-brand-border rounded-lg p-4 flex flex-col gap-3">
+    <div className={wrapperClass}>
       <div className="flex items-center gap-2">
         <svg
-          width="20"
-          height="20"
+          width={compact ? 16 : 20}
+          height={compact ? 16 : 20}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
           strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-brand-primary"
+          className="text-brand-primary flex-shrink-0"
           aria-hidden="true"
         >
           <rect x="1" y="3" width="15" height="13" />
@@ -78,10 +88,19 @@ export default function FreteCalculator({ weightGrams }: Props) {
           <circle cx="5.5" cy="18.5" r="2.5" />
           <circle cx="18.5" cy="18.5" r="2.5" />
         </svg>
-        <p className="text-brand-text font-semibold text-sm">Calcular frete e prazo</p>
+        <p
+          className={`text-brand-text font-semibold ${
+            compact ? "text-[13px]" : "text-sm"
+          }`}
+        >
+          Calcular frete e prazo
+        </p>
       </div>
 
-      <form onSubmit={onSubmit} className="flex gap-2">
+      <form
+        onSubmit={onSubmit}
+        className={compact ? "flex flex-col gap-2" : "flex gap-2"}
+      >
         <input
           inputMode="numeric"
           maxLength={9}
@@ -89,12 +108,18 @@ export default function FreteCalculator({ weightGrams }: Props) {
           onChange={(e) => setCep(formatCep(e.target.value))}
           placeholder="00000-000"
           aria-label="Digite seu CEP"
-          className="flex-1 bg-brand-bg border border-brand-border focus:border-brand-primary rounded px-3 py-2 text-brand-text text-sm outline-none transition-colors"
+          className={`bg-brand-surface border border-brand-border focus:border-brand-primary rounded-md px-3 py-2.5 text-brand-text text-[13px] outline-none transition-colors min-w-0 ${
+            compact ? "w-full" : "flex-1"
+          }`}
         />
         <button
           type="submit"
           disabled={loading}
-          className="bg-brand-primary hover:bg-brand-primary-hover disabled:opacity-50 text-white text-sm font-semibold px-4 rounded transition-colors"
+          className={`bg-grad-primary disabled:opacity-50 text-white font-bold rounded-md shadow-glow-sm hover:shadow-glow-primary transition-all flex-shrink-0 ${
+            compact
+              ? "w-full py-2.5 text-[13px]"
+              : "text-sm px-4"
+          }`}
         >
           {loading ? "Calculando…" : "Calcular"}
         </button>

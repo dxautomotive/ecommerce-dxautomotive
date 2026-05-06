@@ -14,7 +14,7 @@ import CompatibilityBadge from "@modules/products/components/compatibility-badge
 import AiSummary from "@modules/products/components/ai-summary"
 import CompatibilityChecker from "@modules/products/components/compatibility-checker"
 import BuyBox from "@modules/products/components/buy-box"
-import RatingSummary from "@modules/products/components/rating-summary"
+import ProductHeaderActions from "@modules/products/components/product-header-actions"
 import ProductActionsWrapper from "../product-actions-wrapper"
 
 type Props = {
@@ -66,12 +66,20 @@ export default function ProductTemplateDX({
           <ProductGalleryDX images={images} alt={product.title || ""} />
         </div>
 
-        <div className="large:col-span-3 flex flex-col gap-5 min-w-0">
-          {product.collection?.title && (
-            <span className="text-brand-cyan text-[10px] uppercase tracking-[0.2em] font-bold">
-              {product.collection.title}
-            </span>
-          )}
+        <div className="large:col-span-3 flex flex-col gap-4 min-w-0">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            {product.collection?.title ? (
+              <span className="text-brand-cyan text-[10px] uppercase tracking-[0.2em] font-bold">
+                {product.collection.title}
+              </span>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            <ProductHeaderActions
+              productId={product.id}
+              productTitle={product.title || ""}
+            />
+          </div>
 
           <div>
             <h1 className="text-[20px] leading-[28px] font-bold text-brand-text">
@@ -89,8 +97,6 @@ export default function ProductTemplateDX({
               </p>
             )}
           </div>
-
-          <RatingSummary productId={product.id} />
 
           <CompatibilityBadge metadata={meta as any} />
 

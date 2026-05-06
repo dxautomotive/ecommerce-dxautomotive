@@ -121,15 +121,8 @@ export default function BuyBox({ product, region, actionsSlot }: Props) {
         productHandle={product.handle}
       />
 
-      <button
-        type="button"
-        className="mt-2 w-full flex items-center justify-center gap-1.5 bg-transparent border border-brand-border-2 text-brand-text-2 font-semibold text-[13px] py-2.5 rounded-md hover:border-brand-silver-dim hover:text-brand-text transition-all"
-      >
-        <HeartIcon /> Adicionar aos favoritos
-      </button>
-
       <div className="mt-3.5">
-        <FreteCalculator weightGrams={weight} />
+        <FreteCalculator weightGrams={weight} compact />
       </div>
 
       <div className="flex flex-col gap-2 mt-3.5">
@@ -147,20 +140,3 @@ export default function BuyBox({ product, region, actionsSlot }: Props) {
   )
 }
 
-function HeartIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  )
-}
