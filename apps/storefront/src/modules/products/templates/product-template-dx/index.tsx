@@ -164,7 +164,7 @@ export default function ProductTemplateDX({
 
       <section
         id="produto-detalhes"
-        className="content-container scroll-mt-24 pt-3 pb-6 small:pb-10 flex flex-col gap-8"
+        className="content-container scroll-mt-24 py-3 flex flex-col gap-8"
       >
         <ProductTabsDX product={product} />
         <VehicleCompatibility productId={product.id} />
@@ -172,7 +172,7 @@ export default function ProductTemplateDX({
 
       <section
         id="avaliacoes"
-        className="content-container scroll-mt-24 py-6 small:py-10"
+        className="content-container scroll-mt-24 py-3"
       >
         <h2 className="text-[20px] small:text-[24px] font-extrabold text-brand-text mb-5">
           Avaliações dos clientes
@@ -182,10 +182,12 @@ export default function ProductTemplateDX({
         </div>
       </section>
 
-      <GuaranteeHighlight />
+      <div className="py-3">
+        <GuaranteeHighlight />
+      </div>
 
       <section
-        className="content-container my-12 small:my-20"
+        className="content-container py-3 pb-12 small:pb-16"
         data-testid="related-products-container"
       >
         <Suspense fallback={<SkeletonRelatedProducts />}>
