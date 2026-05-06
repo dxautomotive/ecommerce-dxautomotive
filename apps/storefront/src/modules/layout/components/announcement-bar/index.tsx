@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react"
 
 const MESSAGES = [
-  { icon: "🚚", text: "Frete para todo o Brasil" },
-  { icon: "💸", text: "Desconto especial no Pix" },
+  { icon: "🚚", text: "Frete grátis acima de R$ 499 para todo o Brasil" },
+  { icon: "⚡", text: "10% off pagando no Pix · aprovação imediata" },
   { icon: "💳", text: "Parcele em até 12x no cartão" },
+  { icon: "🛡️", text: "Garantia 2 anos direto com a loja" },
   { icon: "💬", text: "Atendimento por WhatsApp seg a sáb 9h–18h" },
-  { icon: "🛡️", text: "Garantia em todos os produtos" },
 ] as const
 
 /**

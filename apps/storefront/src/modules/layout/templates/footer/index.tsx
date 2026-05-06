@@ -1,9 +1,9 @@
 import Image from "next/image"
 import { listCategories } from "@lib/data/categories"
-import { listCollections } from "@lib/data/collections"
 import { Text, clx } from "@modules/common/components/ui"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import NewsletterFooter from "@modules/layout/components/newsletter-footer"
 
 const PAYMENT_METHODS = [
   { src: "/payment/pix.png", alt: "Pix" },
@@ -23,7 +23,6 @@ const SECURITY_SEALS = [
 ] as const
 
 export default async function Footer() {
-  const { collections } = await listCollections({ fields: "*products" })
   const productCategories = await listCategories()
 
   return (
@@ -145,25 +144,7 @@ export default async function Footer() {
             </ul>
           </div>
 
-          {collections && collections.length > 0 && (
-            <div className="flex flex-col gap-y-3">
-              <span className="text-brand-text font-semibold text-sm">
-                Coleções
-              </span>
-              <ul className="grid grid-cols-1 gap-2 text-brand-muted text-sm">
-                {collections.slice(0, 6).map((c) => (
-                  <li key={c.id}>
-                    <LocalizedClientLink
-                      className="hover:text-brand-text transition-colors"
-                      href={`/collections/${c.handle}`}
-                    >
-                      {c.title}
-                    </LocalizedClientLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <NewsletterFooter />
         </div>
 
         <div className="flex flex-col gap-y-6 border-t border-brand-border py-8">

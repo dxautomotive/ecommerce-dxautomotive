@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductGalleryDX from "@modules/products/components/product-gallery-dx"
+import GuaranteeHighlight from "@modules/products/components/guarantee-highlight"
 import ProductTabsDX from "@modules/products/components/product-tabs-dx"
 import VehicleCompatibility from "@modules/products/components/vehicle-compatibility"
 import RelatedProducts from "@modules/products/components/related-products"
@@ -94,6 +95,8 @@ export default function ProductTemplateDX({
       <section className="content-container py-6 small:py-10">
         <ProductTabsDX product={product} />
       </section>
+
+      <GuaranteeHighlight />
 
       <section
         className="content-container my-12 small:my-20"

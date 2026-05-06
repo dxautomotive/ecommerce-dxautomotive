@@ -15,8 +15,16 @@ const PRIMARY_LINKS = [
   { label: "Molduras", href: "/categories/molduras" },
   { label: "Câmera de Ré", href: "/categories/camera-de-re" },
   { label: "Sensor", href: "/categories/sensor-de-estacionamento" },
+  { label: "Coleções", href: "/colecoes" },
   { label: "Atacado", href: "/atacado" },
 ] as const
+
+const WHATSAPP_NUMBER =
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5548000000000"
+const WHATSAPP_HUMAN = "(48) 0000-0000"
+const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+  "Olá! Tenho uma dúvida sobre os produtos."
+)}`
 
 export default async function Nav() {
   const [regions, locales, currentLocale] = await Promise.all([
@@ -54,6 +62,34 @@ export default async function Nav() {
             </div>
 
             <div className="flex items-center gap-4 small:gap-6 text-sm">
+              <a
+                href={WHATSAPP_LINK}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden small:flex items-center gap-2 text-brand-muted hover:text-brand-success transition-colors"
+                data-testid="nav-whatsapp-link"
+                aria-label="Falar conosco pelo WhatsApp"
+              >
+                <svg
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9s-.5-.2-.7.2-.8.9-1 1.1c-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.4.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.7-1.7-.9-2.3-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4s-1 1-1 2.4 1 2.8 1.2 3c.1.2 2 3 4.7 4.2.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.5-.1 1.7-.7 2-1.3.2-.7.2-1.2.1-1.3-.1-.1-.3-.2-.6-.4z" />
+                  <path d="M20.5 3.5C18.3 1.2 15.3 0 12.1 0 5.5 0 .1 5.4.1 12c0 2.1.5 4.2 1.6 6L0 24l6.2-1.6c1.8 1 3.8 1.5 5.9 1.5 6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.6-8.4zm-8.4 18.5c-1.9 0-3.7-.5-5.3-1.5l-.4-.2-3.7 1 1-3.6-.2-.4c-1.1-1.7-1.6-3.7-1.6-5.7 0-5.6 4.6-10.1 10.1-10.1 2.7 0 5.2 1.1 7.1 3 1.9 1.9 2.9 4.4 2.9 7.1 0 5.5-4.4 9.4-9.9 9.4z" />
+                </svg>
+                <div className="hidden medium:flex flex-col leading-tight">
+                  <span className="text-[10px] uppercase tracking-wider text-brand-muted">
+                    WhatsApp
+                  </span>
+                  <span className="text-sm font-bold text-brand-text">
+                    {WHATSAPP_HUMAN}
+                  </span>
+                </div>
+              </a>
+
               <LocalizedClientLink
                 href="/account"
                 className="hidden small:flex items-center gap-2 text-brand-muted hover:text-brand-text transition-colors"
