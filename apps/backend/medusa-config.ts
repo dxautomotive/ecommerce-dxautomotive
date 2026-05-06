@@ -23,5 +23,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/product_reviews",
     },
+    {
+      resolve: "./src/modules/product_relationships",
+    },
   ],
 })

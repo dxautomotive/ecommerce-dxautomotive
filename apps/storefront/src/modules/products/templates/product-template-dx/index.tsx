@@ -16,6 +16,7 @@ import CompatibilityChecker from "@modules/products/components/compatibility-che
 import BuyBox from "@modules/products/components/buy-box"
 import ProductHeaderActions from "@modules/products/components/product-header-actions"
 import ProductReviews from "@modules/products/components/product-reviews"
+import BundleSection from "@modules/products/components/bundle-section"
 import ProductActionsWrapper from "../product-actions-wrapper"
 
 type Props = {
@@ -139,6 +140,24 @@ export default function ProductTemplateDX({
       >
         <ProductTabsDX product={product} />
         <VehicleCompatibility productId={product.id} />
+      </section>
+
+      <section className="content-container py-3 small:py-5">
+        <BundleSection
+          product={
+            {
+              id: product.id,
+              title: product.title || "",
+              thumbnail: product.thumbnail ?? null,
+              handle: product.handle || "",
+              variants: (product.variants ?? []).map((v) => ({
+                id: v.id,
+                calculated_price: (v as any).calculated_price,
+              })),
+            } as any
+          }
+          currencyCode={region.currency_code}
+        />
       </section>
 
       <section
