@@ -65,8 +65,15 @@ Vision-Generico-V35/
 
 # ─── Screenshots gerados em desenvolvimento ────────────────
 *.png
+*.jpg
+*.jpeg
 !apps/storefront/public/**/*.png
+!apps/storefront/public/**/*.jpg
+!apps/storefront/public/**/*.jpeg
 !docs/**/*.png
+
+# ─── Uploads dev local (reviews) ───────────────────────────
+apps/backend/static/uploads/
 
 # ─── Misc ──────────────────────────────────────────────────
 *.pid
