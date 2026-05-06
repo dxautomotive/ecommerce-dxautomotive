@@ -58,7 +58,7 @@ export default function ProductTemplateDX({
       <Breadcrumb product={product} />
 
       <section
-        className="content-container grid grid-cols-1 large:grid-cols-12 gap-6 large:gap-8 py-6 small:py-10"
+        className="content-container grid grid-cols-1 large:grid-cols-12 gap-6 large:gap-8 pt-2 pb-6 small:pb-10"
         data-testid="product-container"
       >
         <div className="large:col-span-6 min-w-0">
@@ -73,16 +73,16 @@ export default function ProductTemplateDX({
           )}
 
           <div>
-            <h1 className="text-2xl small:text-3xl font-extrabold text-brand-text leading-tight">
+            <h1 className="text-[20px] leading-[28px] font-bold text-brand-text">
               {product.title}
             </h1>
             {product.subtitle && (
-              <p className="text-brand-text-2 text-base mt-2">
+              <p className="text-brand-text-2 text-[13px] mt-2">
                 {product.subtitle}
               </p>
             )}
             {sku && (
-              <p className="text-brand-text-3 text-xs mt-2 uppercase tracking-wider">
+              <p className="text-brand-text-3 text-[11px] mt-2 uppercase tracking-wider">
                 SKU:{" "}
                 <span className="text-brand-text-2 font-mono">{sku}</span>
               </p>
@@ -176,7 +176,7 @@ function Breadcrumb({ product }: { product: HttpTypes.StoreProduct }) {
   return (
     <nav
       aria-label="Caminho de navegação"
-      className="content-container py-4 text-xs text-brand-text-3"
+      className="content-container pt-3 pb-1 text-xs text-brand-text-3"
     >
       <ol className="flex items-center gap-2 flex-wrap">
         <li>
