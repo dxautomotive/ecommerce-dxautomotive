@@ -1,9 +1,9 @@
 // Customização de i18n do Admin DX Automotive
 // O dashboard Medusa carrega este módulo via `virtual:medusa/i18n` e mescla
-// as chaves abaixo nos resources do i18next (deep merge). Só sobrescrevemos
-// o que aparece nas telas pré-login (login, convite, redefinição de senha) e
-// algumas chaves comuns dessas telas para não exibir a marca "Medusa" nem
-// inglês para o cliente.
+// as chaves abaixo nos resources do i18next (deep merge). Sobrescrevemos:
+//  - Telas pré-login (login, convite, redefinição de senha)
+//  - Trechos da página de produto que ficam em inglês mesmo no locale pt-BR
+//    (ex.: "Shipping configuration")
 //
 // O resto da UI usa os pacotes built-in do dashboard (en/ptBR/...).
 
@@ -11,6 +11,7 @@ const dxAuthOverrides = {
   fields: {
     email: "E-mail",
     password: "Senha",
+    shippingProfile: "Perfil de envio",
   },
   actions: {
     continueWithEmail: "Entrar com e-mail",
@@ -60,6 +61,34 @@ const dxAuthOverrides = {
   auth: {
     login: {
       authenticationFailed: "Falha na autenticação. Verifique seu e-mail e senha.",
+    },
+  },
+  // Página de detalhe de produto — ficavam em inglês no locale ptBR
+  products: {
+    shippingProfile: {
+      header: "Configurações de envio",
+      edit: {
+        header: "Configurações de envio",
+        toasts: {
+          success:
+            "Configurações de envio de {{title}} atualizadas com sucesso.",
+        },
+      },
+      create: {
+        errors: {
+          required: "Selecione um perfil de envio",
+        },
+      },
+    },
+  },
+  shippingProfile: {
+    create: {
+      successToast:
+        'Perfil de envio "{{name}}" criado com sucesso.',
+    },
+    delete: {
+      successToast:
+        'Perfil de envio "{{name}}" removido com sucesso.',
     },
   },
 }

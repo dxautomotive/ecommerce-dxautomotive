@@ -205,9 +205,31 @@ export default async function dxBootstrap({ container }: ExecArgs) {
 
   const { data: shippingProfiles } = await query.graph({
     entity: "shipping_profile",
-    fields: ["id"],
+    fields: ["id", "name", "type"],
   })
-  const shippingProfile = shippingProfiles[0]
+  const shippingProfile = shippingProfiles[0] as {
+    id: string
+    name?: string
+    type?: string
+  }
+
+  // Renomeia o shipping profile default pra pt-BR (Medusa cria como "Default Shipping Profile").
+  // Usamos SQL direto porque `fulfillmentSvc.updateShippingProfiles({ id, name })`
+  // retorna OK mas não persistiu na nossa testagem (provavelmente bug de signature
+  // do MedusaService factory para ShippingProfile). Knex bypass é seguro pra essa
+  // operação simples e idempotente.
+  if (
+    shippingProfile.name === "Default Shipping Profile" ||
+    !shippingProfile.name
+  ) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const knex: any = container.resolve("__pg_connection__" as never)
+    await knex.raw(
+      `UPDATE shipping_profile SET name = 'Padrão', updated_at = NOW() WHERE id = ?`,
+      [shippingProfile.id]
+    )
+    logger.info("[DX] Shipping profile renomeado pra 'Padrão' (via SQL)")
+  }
 
   const existingSets = await fulfillmentSvc.listFulfillmentSets({
     name: "DX Automotive - Brasil",
