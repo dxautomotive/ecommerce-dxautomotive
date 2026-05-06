@@ -3,7 +3,7 @@
 import { Toaster as SonnerToaster } from "sonner"
 
 /**
- * Toaster DX — wrapper do `sonner` com tema dark v2.1 aplicado.
+ * Toaster DX — wrapper do `sonner` com tema light v3.0 aplicado.
  *
  * Uso (em qualquer client component):
  *   import { toast } from "sonner"
@@ -15,17 +15,17 @@ const Toaster = () => {
   return (
     <SonnerToaster
       position="top-right"
-      theme="dark"
+      theme="light"
       richColors={false}
       toastOptions={{
         style: {
-          background: "#111E34",
-          border: "1.5px solid #1A2540",
-          color: "#E8F0F8",
+          background: "#FFFFFF",
+          border: "1.5px solid #E2E8F0",
+          color: "#0A0F1A",
           borderRadius: "12px",
           fontFamily: "var(--font-inter), Inter, sans-serif",
+          boxShadow: "0 12px 32px rgba(15, 23, 42, .12)",
         },
-        className: "shadow-lg",
       }}
     />
   )

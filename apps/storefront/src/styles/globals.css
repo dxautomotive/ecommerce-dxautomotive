@@ -3,75 +3,74 @@
 @import "tailwindcss/utilities";
 
 /* ──────────────────────────────────────────────────────────────────
-   DX Automotive — Design System v2.1 (KaBuM-inspired)
-   Fonte da verdade: DX_Automotive_Implementation_Guide.md
+   DX Automotive — Design System v3.0 (Light theme)
+   Migração v2.1 dark → v3.0 light: fundo branco, texto preto-azulado,
+   cores de marca preservadas (azul primary, cyan, pix, wpp, star, etc).
+   Fonte da verdade do dark legado: DX_Automotive_Implementation_Guide.md
    ────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* ── Fundos (azul-preto oficial da marca) ──────────────────── */
-  --brand-bg:           #050810;
-  --brand-bg-deep:      #030610;
-  --brand-surface:      #0D1528;
-  --brand-surface-2:    #111E34;
-  --brand-surface-3:    #162540;
+  /* ── Fundos ─────────────────────────────────────────────────── */
+  --brand-bg:           #FFFFFF;
+  --brand-bg-deep:      #F8FAFC;
+  --brand-surface:      #FFFFFF;
+  --brand-surface-2:    #F4F6FA;
+  --brand-surface-3:    #E8ECF2;
 
   /* ── Bordas ────────────────────────────────────────────────── */
-  --brand-border:       #1A2540;
-  --brand-border-2:     #243050;
+  --brand-border:       #E2E8F0;
+  --brand-border-2:     #CBD5E0;
 
-  /* ── Primária: azul elétrico do feixe do logo ──────────────── */
-  --brand-primary:      #0088FF;
-  --brand-primary-h:    #0066DD;
-  --brand-primary-d:    #0044CC;
+  /* ── Primária: azul elétrico do feixe do logo (1 tom + escuro pra contraste em fundo branco) */
+  --brand-primary:      #0066DD;
+  --brand-primary-h:    #0055CC;
+  --brand-primary-d:    #0044BB;
 
-  /* ── Cyan: núcleo brilhante do feixe ───────────────────────── */
-  --brand-cyan:         #00CCFF;
+  /* ── Cyan: usado como eyebrow/categoria (escurecido pra ler em branco) */
+  --brand-cyan:         #0099CC;
 
-  /* ── Silver: cor "AUTO" no logo ───────────────────────────── */
-  --brand-silver:       #8AADCC;
-  --brand-silver-dim:   #4A6880;
+  /* ── Silver / chrome — preservados pro logo */
+  --brand-silver:       #4A6880;
+  --brand-silver-dim:   #94A3B8;
 
-  /* ── Texto ─────────────────────────────────────────────────── */
-  --brand-text:         #E8F0F8;
-  --brand-text-2:       #8AADCC;
-  --brand-text-3:       #4A6880;
+  /* ── Texto (invertido — preto-azulado pra preservar personalidade da marca) */
+  --brand-text:         #0A0F1A;
+  --brand-text-2:       #475569;
+  --brand-text-3:       #94A3B8;
 
-  /* ── Semânticas ────────────────────────────────────────────── */
-  --brand-success:      #00C851;
-  --brand-warning:      #FF6B00;
-  --brand-danger:       #FF3D3D;
+  /* ── Semânticas (preservadas — funcionam em ambos os temas) */
+  --brand-success:      #00A044;
+  --brand-warning:      #E5560A;
+  --brand-danger:       #D9302F;
 
-  /* ── BR-específico ─────────────────────────────────────────── */
-  --brand-pix:          #32BCAD;
-  --brand-wpp:          #25D366;
-  --brand-wpp-hover:    #1DA851;
+  /* ── BR-específico (verde pix/wpp preservado) */
+  --brand-pix:          #2BA294;
+  --brand-wpp:          #1FBD5A;
+  --brand-wpp-hover:    #16A04D;
 
-  /* ── Avaliações ────────────────────────────────────────────── */
-  --brand-star:         #FFB800;
+  /* ── Avaliações */
+  --brand-star:         #F2A700;
 
-  /* ── Gradientes oficiais ───────────────────────────────────── */
-  --grad-primary:       linear-gradient(135deg, #0099FF 0%, #0055DD 100%);
-  --grad-electric:      linear-gradient(90deg, #00CCFF 0%, #0088FF 50%, #0044CC 100%);
-  --grad-chrome:        linear-gradient(160deg, #F0F2F5 0%, #C4C8D0 30%, #8090A0 60%, #3A4050 100%);
-  --grad-bg-deep:       linear-gradient(135deg, #0D1528 0%, #050810 100%);
+  /* ── Gradientes (oficial — `text-grad-electric` continua a signature do Pix) */
+  --grad-primary:       linear-gradient(135deg, #0099FF 0%, #0044BB 100%);
+  --grad-electric:      linear-gradient(90deg, #00B8E5 0%, #0077EE 50%, #0044BB 100%);
+  --grad-chrome:        linear-gradient(160deg, #94A3B8 0%, #475569 50%, #1E293B 100%);
+  --grad-bg-deep:       linear-gradient(135deg, #FFFFFF 0%, #F4F6FA 100%);
 
-  /* ── Glow (box-shadow) ─────────────────────────────────────── */
-  --glow-primary:       0 0 20px rgba(0,136,255,.25), 0 0 40px rgba(0,100,220,.12);
-  --glow-cyan:          0 0 16px rgba(0,204,255,.30), 0 0 32px rgba(0,136,255,.15);
-  --glow-sm:            0 2px 12px rgba(0,120,255,.30);
+  /* ── Glow (mais sutil em fundo claro — usa shadows soft em vez de halos) */
+  --glow-primary:       0 4px 16px rgba(0, 102, 221, .18), 0 2px 6px rgba(0, 102, 221, .10);
+  --glow-cyan:          0 4px 16px rgba(0, 153, 204, .18);
+  --glow-sm:            0 2px 8px rgba(0, 102, 221, .20);
 
-  /* ── Sombras ───────────────────────────────────────────────── */
-  --shadow-sm:          0 1px 4px rgba(0,0,0,.6);
-  --shadow-md:          0 4px 20px rgba(0,0,0,.7);
-  --shadow-lg:          0 8px 40px rgba(0,0,0,.8);
+  /* ── Sombras genéricas — mais leves em fundo branco */
+  --shadow-sm:          0 1px 2px rgba(15, 23, 42, .06);
+  --shadow-md:          0 4px 12px rgba(15, 23, 42, .08);
+  --shadow-lg:          0 12px 32px rgba(15, 23, 42, .12);
 }
 
 html {
   scroll-behavior: smooth;
-}
-
-html.dark {
-  color-scheme: dark;
+  color-scheme: light;
   background-color: var(--brand-bg);
   color: var(--brand-text);
 }
@@ -84,9 +83,9 @@ body {
   font-feature-settings: "ss01", "ss02", "cv01", "cv11";
 }
 
-/* Focus ring acessível padrão DX */
+/* Focus ring acessível padrão DX — agora azul mais escuro pra contrastar em branco */
 :focus-visible {
-  outline: 2px solid rgba(0, 136, 255, 0.6);
+  outline: 2px solid rgba(0, 102, 221, 0.55);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -132,8 +131,8 @@ textarea:focus-visible {
   select:-webkit-autofill,
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus {
-    border: 1px solid #212121;
-    -webkit-text-fill-color: #212121;
+    border: 1px solid #cbd5e0;
+    -webkit-text-fill-color: #0A0F1A;
     -webkit-box-shadow: 0 0 0px 1000px #fff inset;
     transition: background-color 5000s ease-in-out 0s;
   }

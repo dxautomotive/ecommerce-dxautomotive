@@ -20,56 +20,55 @@ module.exports = {
         padding: "padding-top padding-right padding-bottom padding-left",
       },
       colors: {
-        // ─── DX Automotive — Design System v2.1 (KaBuM-inspired) ───
-        // Fonte da verdade: DX_Automotive_Implementation_Guide.md
+        // ─── DX Automotive — Design System v3.0 (Light theme) ───
+        // Migração v2.1 dark → v3.0 light. Fundos brancos, texto preto-azulado,
+        // cores de marca (azul, cyan, pix, wpp, star) preservadas com ajustes
+        // pontuais de contraste. Fonte: globals.css :root vars.
         brand: {
           // Fundos
-          bg: "#050810",
-          "bg-deep": "#030610",
-          surface: "#0D1528",
-          "surface-2": "#111E34",
-          "surface-3": "#162540",
+          bg: "#FFFFFF",
+          "bg-deep": "#F8FAFC",
+          surface: "#FFFFFF",
+          "surface-2": "#F4F6FA",
+          "surface-3": "#E8ECF2",
 
           // Bordas
-          border: "#1A2540",
-          "border-2": "#243050",
+          border: "#E2E8F0",
+          "border-2": "#CBD5E0",
 
-          // Primária (azul elétrico do feixe)
-          primary: "#0088FF",
-          "primary-h": "#0066DD",
-          "primary-d": "#0044CC",
-          // Alias temporário pra compatibilidade com código pré-v2.1
-          "primary-hover": "#0066DD",
+          // Primária — escurecida 1 tom pra contraste em fundo branco
+          primary: "#0066DD",
+          "primary-h": "#0055CC",
+          "primary-d": "#0044BB",
+          "primary-hover": "#0055CC", // alias compat
 
-          // Cyan (núcleo brilhante)
-          cyan: "#00CCFF",
+          // Cyan — escurecida pra usar como eyebrow legível
+          cyan: "#0099CC",
 
-          // Silver (cor "AUTO" no logo)
-          silver: "#8AADCC",
-          "silver-dim": "#4A6880",
+          // Silver / chrome — invertidos pra fundo claro
+          silver: "#4A6880",
+          "silver-dim": "#94A3B8",
 
-          // Texto
-          text: "#E8F0F8",
-          "text-2": "#8AADCC",
-          "text-3": "#4A6880",
-          // Alias temporário (era brand-muted)
-          muted: "#8AADCC",
+          // Texto — invertido (preto-azulado preserva personalidade da marca)
+          text: "#0A0F1A",
+          "text-2": "#475569",
+          "text-3": "#94A3B8",
+          muted: "#475569", // alias compat (era cinza-azulado claro no dark)
 
-          // Semânticas
-          success: "#00C851",
-          warning: "#FF6B00",
-          danger: "#FF3D3D",
+          // Semânticas — escurecidas pra contraste em branco
+          success: "#00A044",
+          warning: "#E5560A",
+          danger: "#D9302F",
 
-          // BR
-          pix: "#32BCAD",
-          wpp: "#25D366",
-          "wpp-hover": "#1DA851",
-          // Aliases temporários (era brand-whatsapp / brand-whatsapp-hover)
-          whatsapp: "#25D366",
-          "whatsapp-hover": "#1DA851",
+          // BR — verdes escurecidos pra contraste em branco
+          pix: "#2BA294",
+          wpp: "#1FBD5A",
+          "wpp-hover": "#16A04D",
+          whatsapp: "#1FBD5A", // aliases compat
+          "whatsapp-hover": "#16A04D",
 
-          // Avaliações
-          star: "#FFB800",
+          // Avaliações — amarelo um pouco mais saturado pra ler em branco
+          star: "#F2A700",
         },
         grey: {
           0: "#FFFFFF",
@@ -135,20 +134,22 @@ module.exports = {
         ],
       },
       backgroundImage: {
-        "grad-primary": "linear-gradient(135deg, #0099FF 0%, #0055DD 100%)",
+        // Gradientes ajustados pra fundo claro: tons escurecidos preservam contraste do texto
+        "grad-primary": "linear-gradient(135deg, #0099FF 0%, #0044BB 100%)",
         "grad-electric":
-          "linear-gradient(90deg, #00CCFF 0%, #0088FF 50%, #0044CC 100%)",
+          "linear-gradient(90deg, #00B8E5 0%, #0077EE 50%, #0044BB 100%)",
+        // Chrome agora vai escuro→escuro pra ficar legível em fundo branco (logo "AUTOMOTIVE")
         "grad-chrome":
-          "linear-gradient(160deg, #F0F2F5 0%, #C4C8D0 30%, #8090A0 60%, #3A4050 100%)",
-        "grad-bg-deep":
-          "linear-gradient(135deg, #0D1528 0%, #050810 100%)",
+          "linear-gradient(160deg, #94A3B8 0%, #475569 50%, #1E293B 100%)",
+        // Hero gradient bem leve (off-white → cinza-claro)
+        "grad-bg-deep": "linear-gradient(135deg, #FFFFFF 0%, #F4F6FA 100%)",
       },
       boxShadow: {
+        // Shadows soft em vez de halos brilhantes — o fundo branco rejeita glows fortes
         "glow-primary":
-          "0 0 20px rgba(0,136,255,.25), 0 0 40px rgba(0,100,220,.12)",
-        "glow-cyan":
-          "0 0 16px rgba(0,204,255,.30), 0 0 32px rgba(0,136,255,.15)",
-        "glow-sm": "0 2px 12px rgba(0,120,255,.30)",
+          "0 4px 16px rgba(0, 102, 221, .18), 0 2px 6px rgba(0, 102, 221, .10)",
+        "glow-cyan": "0 4px 16px rgba(0, 153, 204, .18)",
+        "glow-sm": "0 2px 8px rgba(0, 102, 221, .20)",
       },
       keyframes: {
         ring: {

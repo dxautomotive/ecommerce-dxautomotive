@@ -32,8 +32,8 @@ export default function RootLayout(props: { children: React.ReactNode }) {
   return (
     <html
       lang="pt-BR"
-      data-mode="dark"
-      className={`dark ${inter.variable} ${barlow.variable}`}
+      data-mode="light"
+      className={`${inter.variable} ${barlow.variable}`}
     >
       <body className="bg-brand-bg text-brand-text antialiased font-sans">
         <main className="relative">{props.children}</main>
