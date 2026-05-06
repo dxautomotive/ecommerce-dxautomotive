@@ -149,14 +149,6 @@ export default function ProductTemplateDX({
         <TrustSignals />
       </section>
 
-      <section
-        id="produto-detalhes"
-        className="content-container scroll-mt-24 py-6 small:py-10 flex flex-col gap-8"
-      >
-        <ProductTabsDX product={product} />
-        <VehicleCompatibility productId={product.id} />
-      </section>
-
       <section className="content-container py-3 small:py-5">
         <BundleSection
           product={
@@ -173,6 +165,14 @@ export default function ProductTemplateDX({
           }
           currencyCode={region.currency_code}
         />
+      </section>
+
+      <section
+        id="produto-detalhes"
+        className="content-container scroll-mt-24 py-6 small:py-10 flex flex-col gap-8"
+      >
+        <ProductTabsDX product={product} />
+        <VehicleCompatibility productId={product.id} />
       </section>
 
       <section
