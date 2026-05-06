@@ -8,44 +8,22 @@ type RelatedProductsProps = {
   countryCode: string
 }
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9001"
-const PUBLISHABLE_KEY =
-  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
-
 /**
- * Busca os ids dos produtos relacionados curados manualmente pelo admin
- * via `GET /store/products/:id/relationships?type=related`. Retorna na ordem
- * definida pelo admin (por position).
- */
-async function fetchManualRelatedIds(productId: string): Promise<string[]> {
-  try {
-    const res = await fetch(
-      `${BACKEND_URL}/store/products/${productId}/relationships?type=related`,
-      {
-        headers: PUBLISHABLE_KEY
-          ? { "x-publishable-api-key": PUBLISHABLE_KEY }
-          : undefined,
-        cache: "no-store",
-      }
-    )
-    if (!res.ok) return []
-    const data = (await res.json()) as { products?: Array<{ id?: string }> }
-    return (data.products ?? [])
-      .map((p) => p?.id)
-      .filter((s): s is string => typeof s === "string")
-  } catch {
-    return []
-  }
-}
-
-/**
- * RelatedProducts v2.1 — agora respeita curadoria manual do admin (módulo
- * `product_relationships`). Pegamos só os IDs ordenados via endpoint custom
- * e re-buscamos via `listProducts` do SDK pra obter o formato canônico
- * (`calculated_price.price_list_type` etc) que `<ProductCardDX>` espera.
+ * RelatedProducts — produtos da mesma coleção (e tags) do produto atual.
  *
- * Se o admin não selecionou nada, fallback automático pela coleção/tags.
+ * **Decisão de produto:** abandonamos a curadoria manual (que existia em
+ * `product_relationships` com `relationship_type='related'`). Para catálogos
+ * que crescem além de algumas dezenas de SKUs, escolher manualmente quais
+ * produtos aparecem em cada PDP é inviável. A coleção/tags já carrega essa
+ * semântica de "produtos similares".
+ *
+ * Curadoria manual continua disponível só pra **bundle "Compre junto"**, que
+ * tem natureza diferente (combo intencional pequeno, máx 3 produtos).
+ *
+ * Ordem de fallback:
+ *  1. Mesma coleção (collection_id)
+ *  2. Mesmas tags (tag_id) se a coleção retornar pouco
+ *  3. Nada — não renderiza
  */
 export default async function RelatedProducts({
   product,
@@ -54,39 +32,20 @@ export default async function RelatedProducts({
   const region = await getRegion(countryCode)
   if (!region) return null
 
-  // 1) Tenta curadoria manual primeiro
-  const manualIds = await fetchManualRelatedIds(product.id)
-  let products: HttpTypes.StoreProduct[] = []
-
-  if (manualIds.length > 0) {
-    const manual = await listProducts({
-      queryParams: { id: manualIds, region_id: region.id, is_giftcard: false },
-      countryCode,
-    }).then(({ response }) => response.products)
-
-    // Preserva a ordem definida pelo admin
-    const byId = new Map(manual.map((p) => [p.id, p]))
-    products = manualIds.map((id) => byId.get(id)).filter(Boolean) as HttpTypes.StoreProduct[]
+  const queryParams: HttpTypes.StoreProductListParams = {
+    region_id: region.id,
+    is_giftcard: false,
+  }
+  if (product.collection_id) queryParams.collection_id = [product.collection_id]
+  if (product.tags) {
+    const tagIds = product.tags.map((t) => t.id).filter(Boolean) as string[]
+    if (tagIds.length > 0) queryParams.tag_id = tagIds
   }
 
-  // 2) Fallback automático se não houver curadoria
-  if (products.length === 0) {
-    const queryParams: HttpTypes.StoreProductListParams = {
-      region_id: region.id,
-      is_giftcard: false,
-    }
-    if (product.collection_id) queryParams.collection_id = [product.collection_id]
-    if (product.tags) {
-      const tagIds = product.tags.map((t) => t.id).filter(Boolean) as string[]
-      if (tagIds.length > 0) queryParams.tag_id = tagIds
-    }
-
-    const auto = await listProducts({ queryParams, countryCode }).then(
-      ({ response }) =>
-        response.products.filter((p) => p.id !== product.id).slice(0, 8)
-    )
-    products = auto
-  }
+  const products = await listProducts({ queryParams, countryCode }).then(
+    ({ response }) =>
+      response.products.filter((p) => p.id !== product.id).slice(0, 8)
+  )
 
   if (!products.length) return null
 
@@ -96,7 +55,7 @@ export default async function RelatedProducts({
         Produtos relacionados
       </h2>
       <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-3 small:gap-4">
-        {products.slice(0, 8).map((p) => (
+        {products.map((p) => (
           <li key={p.id}>
             <ProductCardDX product={p} region={region} />
           </li>

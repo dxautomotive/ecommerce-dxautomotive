@@ -9,6 +9,14 @@ import ProductRelationshipsModuleService from "../../../../../modules/product_re
 const ALLOWED_TYPES = ["related", "bundle"] as const
 type RelType = (typeof ALLOWED_TYPES)[number]
 
+// Limites por tipo. Produtos Relacionados foi descontinuado — o storefront
+// agora puxa automático pela coleção. O tipo continua no banco pra não quebrar
+// dados existentes, mas novos POST são bloqueados.
+const TYPE_MAX: Record<RelType, number> = {
+  related: 0, // descontinuado pra novos POST
+  bundle: 3, // máximo 3 produtos vinculados além do produto-base
+}
+
 /**
  * GET /admin/products/:id/relationships?type=related|bundle
  *
@@ -98,10 +106,32 @@ export async function POST(req: MedusaRequest<PostBody>, res: MedusaResponse) {
       .status(400)
       .json({ error: "validation_error", message: "relationship_type inválido" })
   }
+  if (TYPE_MAX[type] === 0) {
+    return res.status(400).json({
+      error: "type_disabled",
+      message:
+        "Produtos relacionados agora são automáticos pela coleção do produto. Use 'bundle' para Compre Junto.",
+    })
+  }
   if (targetId === req.params.id) {
     return res.status(400).json({
       error: "validation_error",
       message: "Produto não pode se relacionar consigo mesmo",
+    })
+  }
+
+  // Limite por tipo (ex.: bundle máx 3)
+  const currentCount = await service.listProductRelationships(
+    {
+      source_product_id: req.params.id,
+      relationship_type: type,
+    },
+    { take: 100 }
+  )
+  if (currentCount.length >= TYPE_MAX[type]) {
+    return res.status(400).json({
+      error: "limit_reached",
+      message: `Máximo de ${TYPE_MAX[type]} produtos vinculados como '${type}'`,
     })
   }
 
