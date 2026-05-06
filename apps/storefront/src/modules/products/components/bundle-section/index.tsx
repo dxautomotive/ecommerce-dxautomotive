@@ -138,7 +138,8 @@ export default function BundleSection({ product, currencyCode }: Props) {
         Compre junto e leve também
       </h2>
 
-      <div className="flex items-stretch gap-3 small:gap-5 overflow-x-auto pb-2">
+      <div className="flex flex-col medium:flex-row medium:items-stretch gap-5 medium:gap-6">
+        <div className="flex-1 min-w-0 flex items-stretch gap-3 small:gap-5 overflow-x-auto pb-2 medium:pb-0">
         {allItems.map((p, i) => {
           const isBase = p.id === product.id
           const isSelected = selected.has(p.id)
@@ -212,34 +213,35 @@ export default function BundleSection({ product, currencyCode }: Props) {
             </div>
           )
         })}
-      </div>
-
-      <div className="mt-5 flex flex-col small:flex-row small:items-center small:justify-between gap-4 pt-5 border-t border-brand-border">
-        <div className="flex flex-col gap-0.5">
-          <p className="text-[12px] text-brand-text-3 uppercase tracking-wider font-semibold">
-            Total ({selectedCount}{" "}
-            {selectedCount === 1 ? "produto" : "produtos"})
-          </p>
-          <p className="text-[26px] font-black text-grad-electric leading-none">
-            {fmt(pixSubtotal)}
-          </p>
-          <p className="text-[12px] text-brand-text-2">
-            no Pix · ou{" "}
-            <strong className="text-brand-text">{fmt(subtotal)}</strong> no
-            cartão
-          </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleBuyAll}
-          disabled={adding || selectedCount === 0}
-          className="bg-grad-primary text-white font-black text-[15px] px-6 py-3.5 rounded-md shadow-glow-sm hover:shadow-glow-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {adding
-            ? "Adicionando..."
-            : `Adicionar ${selectedCount} ao carrinho →`}
-        </button>
+        <div className="medium:w-[260px] flex-shrink-0 flex flex-col gap-3 justify-center medium:border-l medium:border-brand-border medium:pl-6 pt-5 medium:pt-0 border-t medium:border-t-0 border-brand-border">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-[12px] text-brand-text-3 uppercase tracking-wider font-semibold">
+              Total ({selectedCount}{" "}
+              {selectedCount === 1 ? "produto" : "produtos"})
+            </p>
+            <p className="text-[26px] font-black text-grad-electric leading-none">
+              {fmt(pixSubtotal)}
+            </p>
+            <p className="text-[12px] text-brand-text-2">
+              no Pix · ou{" "}
+              <strong className="text-brand-text">{fmt(subtotal)}</strong> no
+              cartão
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleBuyAll}
+            disabled={adding || selectedCount === 0}
+            className="bg-grad-primary text-white font-black text-[15px] px-5 py-3 rounded-md shadow-glow-sm hover:shadow-glow-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {adding
+              ? "Adicionando..."
+              : `Adicionar ${selectedCount} ao carrinho →`}
+          </button>
+        </div>
       </div>
     </section>
   )
