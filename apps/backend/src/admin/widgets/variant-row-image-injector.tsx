@@ -38,6 +38,8 @@ const VariantRowImageInjector = ({ data }: DetailWidgetProps<Product>) => {
   const [variants, setVariants] = useState<Variant[]>([])
   const [images, setImages] = useState<ProductImage[]>([])
   const [openVariant, setOpenVariant] = useState<Variant | null>(null)
+  // Seleção pendente — só persiste no servidor quando clica em "Aplicar"
+  const [pendingImageId, setPendingImageId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   // Ref pra mantermos o último mapa atual sem precisar reanexar listener
   const stateRef = useRef<{ variants: Variant[]; images: ProductImage[] }>({
@@ -99,7 +101,12 @@ const VariantRowImageInjector = ({ data }: DetailWidgetProps<Product>) => {
         if (!tbody) return
         const idx = Array.from(tbody.children).indexOf(row)
         const v = stateRef.current.variants[idx]
-        if (v) setOpenVariant(v)
+        if (v) {
+          const cur =
+            (v.metadata as { image_id?: string } | null)?.image_id ?? null
+          setOpenVariant(v)
+          setPendingImageId(cur)
+        }
       }
       // Click em outras células: silenciado, nada acontece (cliente pediu)
     }
@@ -109,44 +116,60 @@ const VariantRowImageInjector = ({ data }: DetailWidgetProps<Product>) => {
     return () => document.removeEventListener("click", handler, true)
   }, [])
 
-  const setVariantImage = async (
-    variantId: string,
-    imageId: string | null
-  ) => {
+  /**
+   * Persiste a seleção pendente. Salva tanto `metadata.image_id` (consumido
+   * pelo storefront) quanto **`thumbnail`** (URL) — assim a miniatura na
+   * linha da variante (que o Medusa renderiza a partir de `variant.thumbnail`)
+   * também atualiza imediatamente.
+   *
+   * Após salvar, dá `location.reload()` pra forçar a tabela do admin a
+   * re-fetchar — evita inconsistência visual entre o que está no banco
+   * e o que está renderizado.
+   */
+  const applyPending = async () => {
+    if (!openVariant) return
     setSaving(true)
     try {
-      const v = stateRef.current.variants.find((x) => x.id === variantId)
-      const meta = { ...(v?.metadata ?? {}), image_id: imageId }
-      if (imageId === null)
-        delete (meta as Record<string, unknown>).image_id
+      const v = openVariant
+      const meta = {
+        ...(v.metadata ?? {}),
+        image_id: pendingImageId,
+      } as Record<string, unknown>
+      if (pendingImageId === null) delete meta.image_id
+
+      const thumbnail = pendingImageId
+        ? stateRef.current.images.find((i) => i.id === pendingImageId)?.url ??
+          null
+        : null
 
       const res = await fetch(
-        `/admin/products/${productId}/variants/${variantId}`,
+        `/admin/products/${productId}/variants/${v.id}`,
         {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ metadata: meta }),
+          body: JSON.stringify({ metadata: meta, thumbnail }),
         }
       )
       if (res.ok) {
-        const next = stateRef.current.variants.map((x) =>
-          x.id === variantId ? { ...x, metadata: meta } : x
-        )
-        setVariants(next)
-        stateRef.current.variants = next
-        setOpenVariant({ ...v!, metadata: meta })
+        // Soft reload: atualiza tudo no admin (a miniatura da row fica em sync)
+        window.location.reload()
       }
     } finally {
       setSaving(false)
     }
   }
 
+  const closeModal = () => {
+    setOpenVariant(null)
+    setPendingImageId(null)
+  }
+
   // ESC fecha o modal
   useEffect(() => {
     if (!openVariant) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpenVariant(null)
+      if (e.key === "Escape") closeModal()
     }
     window.addEventListener("keydown", onKey)
     const prev = document.body.style.overflow
@@ -155,20 +178,27 @@ const VariantRowImageInjector = ({ data }: DetailWidgetProps<Product>) => {
       window.removeEventListener("keydown", onKey)
       document.body.style.overflow = prev
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openVariant])
 
   if (!openVariant) return null
 
   const currentImageId =
     (openVariant.metadata as { image_id?: string } | null)?.image_id ?? null
+  const isDirty = pendingImageId !== currentImageId
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Selecionar imagem da variante"
-      className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={() => setOpenVariant(null)}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{
+        backgroundColor: "rgba(0, 0, 0, 0.75)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
+      }}
+      onClick={closeModal}
     >
       <div
         className="bg-ui-bg-base border border-ui-border-base rounded-lg shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto"
@@ -186,7 +216,7 @@ const VariantRowImageInjector = ({ data }: DetailWidgetProps<Product>) => {
           </div>
           <button
             type="button"
-            onClick={() => setOpenVariant(null)}
+            onClick={closeModal}
             aria-label="Fechar"
             className="text-ui-fg-subtle hover:text-ui-fg-base text-xl leading-none px-2"
           >
@@ -203,21 +233,19 @@ const VariantRowImageInjector = ({ data }: DetailWidgetProps<Product>) => {
           ) : (
             <>
               <p className="text-xs text-ui-fg-subtle mb-3">
-                Clique numa imagem pra associá-la a esta variante. Click de
-                novo na mesma imagem pra desassociar.
+                Clique numa imagem pra selecioná-la, depois clique em{" "}
+                <strong>Aplicar</strong> pra salvar. Clique de novo na mesma
+                imagem pra desselecionar.
               </p>
               <div className="grid grid-cols-3 small:grid-cols-4 gap-3">
                 {images.map((img) => {
-                  const isSelected = img.id === currentImageId
+                  const isSelected = img.id === pendingImageId
                   return (
                     <button
                       key={img.id}
                       type="button"
                       onClick={() =>
-                        setVariantImage(
-                          openVariant.id,
-                          isSelected ? null : img.id
-                        )
+                        setPendingImageId(isSelected ? null : img.id)
                       }
                       disabled={saving}
                       aria-pressed={isSelected}
@@ -242,28 +270,46 @@ const VariantRowImageInjector = ({ data }: DetailWidgetProps<Product>) => {
                   )
                 })}
               </div>
+              {isDirty && (
+                <p className="text-xs text-ui-tag-orange-text mt-3">
+                  ⚠ Alteração não salva — clique em Aplicar pra confirmar.
+                </p>
+              )}
             </>
           )}
         </div>
 
-        <div className="border-t border-ui-border-base px-5 py-3 flex justify-end gap-2">
-          {currentImageId && (
+        <div className="border-t border-ui-border-base px-5 py-3 flex justify-between items-center gap-2">
+          <div>
+            {currentImageId && (
+              <button
+                type="button"
+                onClick={() => setPendingImageId(null)}
+                disabled={saving || pendingImageId === null}
+                className="text-sm text-ui-fg-subtle hover:text-ui-fg-base px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Remover associação
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setVariantImage(openVariant.id, null)}
+              onClick={closeModal}
               disabled={saving}
-              className="text-sm text-ui-fg-subtle hover:text-ui-fg-base px-3 py-1.5"
+              className="text-sm font-semibold bg-ui-bg-base-hover hover:bg-ui-bg-subtle border border-ui-border-base px-3 py-1.5 rounded-md disabled:opacity-50"
             >
-              Remover associação
+              Cancelar
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setOpenVariant(null)}
-            className="text-sm font-semibold bg-ui-bg-base-hover hover:bg-ui-bg-subtle border border-ui-border-base px-3 py-1.5 rounded-md"
-          >
-            Fechar
-          </button>
+            <button
+              type="button"
+              onClick={applyPending}
+              disabled={saving || !isDirty}
+              className="text-sm font-semibold bg-ui-tag-blue-text hover:bg-ui-tag-blue-text/90 text-white border border-ui-tag-blue-text px-4 py-1.5 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? "Salvando…" : "Aplicar"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
