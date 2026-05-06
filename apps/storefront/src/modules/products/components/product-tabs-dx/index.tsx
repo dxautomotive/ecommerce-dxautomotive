@@ -2,6 +2,7 @@
 
 import { HttpTypes } from "@medusajs/types"
 import { useState } from "react"
+import ProductReviews from "@modules/products/components/product-reviews"
 
 type Tab = "descricao" | "especificacoes" | "compatibilidade" | "avaliacoes"
 
@@ -107,15 +108,8 @@ export default function ProductTabsDX({ product }: Props) {
             id="panel-avaliacoes"
             role="tabpanel"
             aria-labelledby="tab-avaliacoes"
-            className="text-brand-muted text-sm"
           >
-            <p>
-              As avaliações deste produto vão aparecer aqui assim que clientes
-              começarem a comentar.
-            </p>
-            <p className="mt-2 text-xs">
-              (Integração com Trustvox prevista para sessão futura.)
-            </p>
+            <ProductReviews productId={product.id} />
           </div>
         )}
       </div>

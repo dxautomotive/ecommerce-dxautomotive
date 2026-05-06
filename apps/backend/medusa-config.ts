@@ -20,5 +20,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/vehicle_compatibility",
     },
+    {
+      resolve: "./src/modules/product_reviews",
+    },
   ],
 })
