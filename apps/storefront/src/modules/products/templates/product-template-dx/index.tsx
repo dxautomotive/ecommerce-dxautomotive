@@ -9,7 +9,6 @@ import ProductTabsDX from "@modules/products/components/product-tabs-dx"
 import VehicleCompatibility from "@modules/products/components/vehicle-compatibility"
 import RelatedProducts from "@modules/products/components/related-products"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
-import TrustSignals from "@modules/products/components/trust-signals"
 import CompatibilityBadge from "@modules/products/components/compatibility-badge"
 import AiSummary from "@modules/products/components/ai-summary"
 import CompatibilityChecker from "@modules/products/components/compatibility-checker"
@@ -143,10 +142,6 @@ export default function ProductTemplateDX({
             </Suspense>
           </div>
         </div>
-      </section>
-
-      <section className="content-container py-6 small:py-10">
-        <TrustSignals />
       </section>
 
       <section className="content-container py-3 small:py-5">
