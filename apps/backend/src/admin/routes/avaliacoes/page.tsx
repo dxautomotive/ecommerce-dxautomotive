@@ -1,6 +1,14 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { Container, Heading, Text, Badge, Button, Select } from "@medusajs/ui"
-import { useEffect, useState } from "react"
+import {
+  Container,
+  Heading,
+  Text,
+  Badge,
+  Button,
+  Select,
+  Input,
+} from "@medusajs/ui"
+import { useEffect, useMemo, useState } from "react"
 
 type ProductSummary = {
   id: string
@@ -88,6 +96,22 @@ const AvaliacoesPage = () => {
   )
 }
 
+type ProductFilter = "all" | "with_pending" | "with_approved" | "without_reviews"
+
+const PRODUCT_FILTER_LABEL: Record<ProductFilter, string> = {
+  all: "Todos os produtos",
+  with_pending: "Com pendentes",
+  with_approved: "Com aprovadas",
+  without_reviews: "Sem avaliações",
+}
+
+const PRODUCT_FILTER_OPTIONS: ProductFilter[] = [
+  "all",
+  "with_pending",
+  "with_approved",
+  "without_reviews",
+]
+
 function ProductsList({
   onSelect,
 }: {
@@ -95,6 +119,8 @@ function ProductsList({
 }) {
   const [items, setItems] = useState<ProductSummary[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState("")
+  const [filter, setFilter] = useState<ProductFilter>("all")
 
   const load = async () => {
     setLoading(true)
@@ -112,6 +138,21 @@ function ProductsList({
 
   const totalPending = items.reduce((s, p) => s + p.review_pending, 0)
   const totalApproved = items.reduce((s, p) => s + p.review_approved, 0)
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return items.filter((p) => {
+      if (filter === "with_pending" && p.review_pending === 0) return false
+      if (filter === "with_approved" && p.review_approved === 0) return false
+      if (filter === "without_reviews" && p.review_total > 0) return false
+      if (q) {
+        const title = (p.title ?? "").toLowerCase()
+        const handle = (p.handle ?? "").toLowerCase()
+        if (!title.includes(q) && !handle.includes(q)) return false
+      }
+      return true
+    })
+  }, [items, search, filter])
 
   return (
     <Container className="p-6">
@@ -143,15 +184,42 @@ function ProductsList({
         </Button>
       </div>
 
+      <div className="flex flex-col lg:flex-row gap-2 mb-4">
+        <Input
+          type="search"
+          placeholder="Buscar produto por nome ou handle..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="lg:flex-1"
+        />
+        <Select value={filter} onValueChange={(v) => setFilter(v as ProductFilter)}>
+          <Select.Trigger className="lg:min-w-[200px]">
+            <Select.Value />
+          </Select.Trigger>
+          <Select.Content>
+            {PRODUCT_FILTER_OPTIONS.map((f) => (
+              <Select.Item key={f} value={f}>
+                {PRODUCT_FILTER_LABEL[f]}
+              </Select.Item>
+            ))}
+          </Select.Content>
+        </Select>
+      </div>
+
       {loading ? (
         <div className="py-12 text-center text-ui-fg-subtle">Carregando…</div>
       ) : items.length === 0 ? (
         <div className="py-12 text-center text-ui-fg-subtle">
           Nenhum produto cadastrado ainda.
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="py-12 text-center text-ui-fg-subtle">
+          Nenhum produto bate com{" "}
+          {search ? <>“<strong>{search}</strong>”</> : "esses filtros"}.
+        </div>
       ) : (
         <div className="flex flex-col gap-2">
-          {items.map((p) => (
+          {filtered.map((p) => (
             <button
               key={p.id}
               type="button"
