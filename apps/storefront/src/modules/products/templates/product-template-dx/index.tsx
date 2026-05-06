@@ -15,6 +15,7 @@ import AiSummary from "@modules/products/components/ai-summary"
 import CompatibilityChecker from "@modules/products/components/compatibility-checker"
 import BuyBox from "@modules/products/components/buy-box"
 import ProductHeaderActions from "@modules/products/components/product-header-actions"
+import ProductReviews from "@modules/products/components/product-reviews"
 import ProductActionsWrapper from "../product-actions-wrapper"
 
 type Props = {
@@ -138,6 +139,18 @@ export default function ProductTemplateDX({
       >
         <ProductTabsDX product={product} />
         <VehicleCompatibility productId={product.id} />
+      </section>
+
+      <section
+        id="avaliacoes"
+        className="content-container scroll-mt-24 py-6 small:py-10"
+      >
+        <h2 className="text-[20px] small:text-[24px] font-extrabold text-brand-text mb-5">
+          Avaliações dos clientes
+        </h2>
+        <div className="bg-brand-surface border border-brand-border rounded-xl p-5 small:p-7">
+          <ProductReviews productId={product.id} />
+        </div>
       </section>
 
       <GuaranteeHighlight />

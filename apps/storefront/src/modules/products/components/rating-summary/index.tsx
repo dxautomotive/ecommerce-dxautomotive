@@ -12,7 +12,7 @@ const apiHeaders: HeadersInit | undefined = PUBLISHABLE_KEY
 
 type Props = {
   productId: string
-  /** ID DOM da section pra rolar quando clicar (default `produto-detalhes`) */
+  /** ID DOM da section pra rolar quando clicar (default `avaliacoes`) */
   scrollTargetId?: string
 }
 
@@ -30,17 +30,15 @@ type Summary = {
  *  - fundo: 5 estrelas vazias (border)
  *  - frente: 5 estrelas amarelas com `width: ${pct}%; overflow: hidden`
  *
- * Click no componente:
- *  1. Dispara `window.dispatchEvent(new CustomEvent("dx:show-tab", { detail: "avaliacoes" }))`
- *     que `<ProductTabsDX>` escuta e troca pra tab Avaliações
- *  2. `scrollIntoView({ behavior: "smooth" })` no `#produto-detalhes`
+ * Click no componente: `scrollIntoView({ behavior: "smooth" })` no `#avaliacoes`
+ * (section full-width sempre visível abaixo da descrição).
  *
  * Quando o produto não tem reviews aprovadas, mostra "Seja o primeiro a avaliar"
- * em estilo discreto (ainda clicável — leva pra tab onde o form de escrever está).
+ * em estilo discreto (ainda clicável — leva pra section onde o form de escrever está).
  */
 export default function RatingSummary({
   productId,
-  scrollTargetId = "produto-detalhes",
+  scrollTargetId = "avaliacoes",
 }: Props) {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -66,9 +64,6 @@ export default function RatingSummary({
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    window.dispatchEvent(
-      new CustomEvent("dx:show-tab", { detail: "avaliacoes" })
-    )
     const el = document.getElementById(scrollTargetId)
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
   }

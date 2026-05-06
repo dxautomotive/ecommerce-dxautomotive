@@ -1,10 +1,9 @@
 "use client"
 
 import { HttpTypes } from "@medusajs/types"
-import { useEffect, useState } from "react"
-import ProductReviews from "@modules/products/components/product-reviews"
+import { useState } from "react"
 
-type Tab = "descricao" | "especificacoes" | "compatibilidade" | "avaliacoes"
+type Tab = "descricao" | "especificacoes" | "compatibilidade"
 
 type Metadata = {
   marca_compativel?: unknown
@@ -22,39 +21,22 @@ type Props = {
 }
 
 /**
- * Abas de informação do produto.
- * - Descrição: usa product.description (text)
- * - Especificações: lê metadata + product.weight/length/etc.
+ * Abas de informação do produto:
+ * - Descrição: product.description (text/markdown leve)
+ * - Especificações: metadata + product.weight/length/etc.
  * - Compatibilidade: lista veículos compatíveis (do metadata)
- * - Avaliações: placeholder até integrarmos provedor
+ *
+ * Avaliações **NÃO** estão aqui — vivem numa `<section id="avaliacoes">`
+ * full-width separada abaixo (sempre visível) renderizada pelo template.
  */
 export default function ProductTabsDX({ product }: Props) {
   const [tab, setTab] = useState<Tab>("descricao")
   const meta = (product.metadata ?? {}) as Metadata
 
-  // Permite que outros componentes (ex.: <RatingSummary> no topo da PDP) abram
-  // uma tab específica via `window.dispatchEvent(new CustomEvent("dx:show-tab", { detail: "avaliacoes" }))`.
-  useEffect(() => {
-    const onShowTab = (e: Event) => {
-      const detail = (e as CustomEvent<string>).detail
-      if (
-        detail === "descricao" ||
-        detail === "especificacoes" ||
-        detail === "compatibilidade" ||
-        detail === "avaliacoes"
-      ) {
-        setTab(detail)
-      }
-    }
-    window.addEventListener("dx:show-tab", onShowTab)
-    return () => window.removeEventListener("dx:show-tab", onShowTab)
-  }, [])
-
   const tabs = [
     { id: "descricao" as const, label: "Descrição" },
     { id: "especificacoes" as const, label: "Especificações" },
     { id: "compatibilidade" as const, label: "Compatibilidade" },
-    { id: "avaliacoes" as const, label: "Avaliações" },
   ]
 
   return (
@@ -121,15 +103,6 @@ export default function ProductTabsDX({ product }: Props) {
           </div>
         )}
 
-        {tab === "avaliacoes" && (
-          <div
-            id="panel-avaliacoes"
-            role="tabpanel"
-            aria-labelledby="tab-avaliacoes"
-          >
-            <ProductReviews productId={product.id} />
-          </div>
-        )}
       </div>
     </div>
   )
