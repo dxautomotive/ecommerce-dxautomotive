@@ -1,14 +1,27 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CountdownTimer from "@modules/common/components/countdown-timer"
 
+type Props = {
+  title?: string
+  subtitle?: string
+  ctaLabel?: string
+  ctaUrl?: string
+  /** ISO 8601. Se vazio, cai no "próximo domingo às 23:59" como fallback. */
+  endsAtIso?: string
+}
+
 /**
- * Banner com countdown de oferta relâmpago para uso na home.
- * O `endsAt` é configurado aqui — em sessão futura virá de Store metadata
- * ou de uma área de campanha no admin.
+ * Banner com countdown de oferta relâmpago. Settings configuráveis
+ * via /app/page-builder.
  */
-export default function FlashSaleBanner() {
-  // Próximo domingo às 23:59 BRT — exemplo de "esta semana"
-  const ends = nextSundayAtMidnight()
+export default function FlashSaleBanner({
+  title = "Oferta relâmpago em multimídia",
+  subtitle = "Até 15% off em centrais selecionadas, com Pix e parcelamento em 6x sem juros. Estoque limitado.",
+  ctaLabel = "Ver multimídia em oferta →",
+  ctaUrl = "/categories/multimidia",
+  endsAtIso,
+}: Props = {}) {
+  const ends = endsAtIso && endsAtIso.trim() ? endsAtIso : nextSundayAtMidnight()
 
   return (
     <section className="content-container py-8">
@@ -18,17 +31,14 @@ export default function FlashSaleBanner() {
             ⚡ Esta semana
           </span>
           <h2 className="text-2xl small:text-3xl font-extrabold text-brand-text leading-tight">
-            Oferta relâmpago em multimídia
+            {title}
           </h2>
-          <p className="text-brand-muted text-sm small:text-base">
-            Até <strong className="text-brand-text">15% off</strong> em centrais
-            selecionadas, com Pix e parcelamento em 6x sem juros. Estoque limitado.
-          </p>
+          <p className="text-brand-muted text-sm small:text-base">{subtitle}</p>
           <LocalizedClientLink
-            href="/categories/multimidia"
+            href={ctaUrl}
             className="self-start mt-2 bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold px-5 py-2.5 rounded transition-colors"
           >
-            Ver multimídia em oferta →
+            {ctaLabel}
           </LocalizedClientLink>
         </div>
 

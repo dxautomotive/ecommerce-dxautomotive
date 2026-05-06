@@ -37,7 +37,17 @@ const ORDER = [
   "sensor-de-estacionamento",
 ]
 
-export default async function CategoryShowcase() {
+type Props = {
+  eyebrow?: string
+  title?: string
+  description?: string
+}
+
+export default async function CategoryShowcase({
+  eyebrow = "Para o seu carro",
+  title = "Encontre o que precisa",
+  description = "Equipamentos selecionados para os principais modelos do mercado brasileiro. Compatibilidade verificada por veículo.",
+}: Props = {}) {
   const categories = await listCategories({ limit: 12 })
   const visible = categories
     .filter((c) => !c.parent_category && ORDER.includes(c.handle))
@@ -50,14 +60,13 @@ export default async function CategoryShowcase() {
       <div className="flex items-end justify-between flex-wrap gap-4 mb-8 small:mb-10">
         <div>
           <span className="text-brand-primary text-xs uppercase tracking-[0.25em] font-semibold">
-            Para o seu carro
+            {eyebrow}
           </span>
           <h2 className="text-3xl small:text-4xl font-extrabold text-brand-text mt-2">
-            Encontre o que precisa
+            {title}
           </h2>
           <p className="text-brand-muted mt-2 max-w-xl">
-            Equipamentos selecionados para os principais modelos do mercado
-            brasileiro. Compatibilidade verificada por veículo.
+            {description}
           </p>
         </div>
         <LocalizedClientLink

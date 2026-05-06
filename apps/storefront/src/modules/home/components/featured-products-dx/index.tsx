@@ -14,6 +14,8 @@ type Props = {
   limit?: number
   /** link "Ver todos" */
   seeAllHref?: string
+  /** filtra por handle de categoria (page-builder integration) */
+  categoryHandle?: string
 }
 
 export default async function FeaturedProductsDX({
@@ -24,10 +26,18 @@ export default async function FeaturedProductsDX({
   query,
   limit = 8,
   seeAllHref = "/store",
+  categoryHandle,
 }: Props) {
+  let extraQuery: Record<string, unknown> = { ...(query ?? {}) }
+  if (categoryHandle) {
+    const { listCategories } = await import("@lib/data/categories")
+    const cats = await listCategories({ limit: 100 })
+    const cat = cats.find((c) => c.handle === categoryHandle)
+    if (cat) extraQuery = { ...extraQuery, category_id: [cat.id] }
+  }
   const { response } = await listProducts({
     countryCode: region.countries?.[0]?.iso_2 || "br",
-    queryParams: { limit, ...(query as any) },
+    queryParams: { limit, ...(extraQuery as any) },
   })
 
   if (!response.products?.length) return null

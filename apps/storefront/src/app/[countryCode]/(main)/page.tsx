@@ -1,15 +1,7 @@
 import { Metadata } from "next"
 
-import { listFeaturedCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
-import FeaturedCollection from "@modules/collections/components/featured-collection"
-import BenefitsBar from "@modules/home/components/benefits-bar"
-import CategoryShowcase from "@modules/home/components/category-showcase"
-import FeaturedProductsDX from "@modules/home/components/featured-products-dx"
-import FlashSaleBanner from "@modules/home/components/flash-sale-banner"
-import HeroCarousel from "@modules/home/components/hero-carousel"
-import PromotionBlocks from "@modules/home/components/promotion-blocks"
-import Testimonials from "@modules/home/components/testimonials"
+import DynamicHomepage from "@modules/page-builder/components/dynamic-homepage"
 
 export const metadata: Metadata = {
   title: "DX Automotive — Tecnologia que transforma seu carro",
@@ -20,48 +12,12 @@ export const metadata: Metadata = {
 export default async function Home(props: {
   params: Promise<{ countryCode: string }>
 }) {
-  const params = await props.params
-  const { countryCode } = params
+  const { countryCode } = await props.params
 
   const region = await getRegion(countryCode)
   if (!region) return null
 
-  const featuredCollections = await listFeaturedCollections().catch(() => [])
-
-  return (
-    <>
-      <HeroCarousel />
-      <BenefitsBar />
-      <CategoryShowcase />
-      <FlashSaleBanner />
-      <FeaturedProductsDX
-        region={region}
-        eyebrow="Mais procurados"
-        title="Produtos em destaque"
-        description="Os equipamentos mais vendidos da loja, prontos para envio imediato."
-        limit={8}
-      />
-
-      {/* Coleções destacadas — vêm do admin (metadata.is_featured=true) */}
-      {featuredCollections.map((collection) => (
-        <FeaturedCollection
-          key={collection.id}
-          collection={collection}
-          countryCode={countryCode}
-          limit={8}
-        />
-      ))}
-
-      <PromotionBlocks />
-      <Testimonials />
-      <FeaturedProductsDX
-        region={region}
-        eyebrow="Acabaram de chegar"
-        title="Novidades"
-        description="Lançamentos recentes do nosso catálogo."
-        limit={4}
-        seeAllHref="/store?sortBy=created_at"
-      />
-    </>
-  )
+  // A home agora é 100% dirigida pelo /app/page-builder.
+  // Editar blocos / settings / ordem é feito direto no admin.
+  return <DynamicHomepage countryCode={countryCode} />
 }

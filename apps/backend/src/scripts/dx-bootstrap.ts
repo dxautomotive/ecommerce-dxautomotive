@@ -22,6 +22,7 @@ import {
 } from "@medusajs/medusa/core-flows"
 import { VEHICLE_COMPATIBILITY_MODULE } from "../modules/vehicle_compatibility"
 import VehicleCompatibilityModuleService from "../modules/vehicle_compatibility/service"
+import { buildDefaultHomeTemplate } from "../page-builder/default-templates"
 
 /**
  * Bootstrap idempotente do dev local DX Automotive.
@@ -602,6 +603,28 @@ export default async function dxBootstrap({ container }: ExecArgs) {
     } else {
       logger.info("[DX] Produto teste já tem links de veículos")
     }
+  }
+
+  // 11b) Template inicial da home no page-builder ---------------------
+  // Só cria se ainda não existir — não sobrescreve edições do lojista.
+  const currentMeta = (store?.metadata ?? {}) as Record<string, unknown>
+  if (!currentMeta.page_template_home) {
+    const defaultHome = buildDefaultHomeTemplate()
+    const newMeta: Record<string, unknown> = {
+      ...currentMeta,
+      page_template_home: defaultHome,
+    }
+    await updateStoresWorkflow(container).run({
+      input: {
+        selector: { id: store.id },
+        update: { metadata: newMeta },
+      },
+    })
+    logger.info(
+      `[DX] Template inicial da home criado em store.metadata (${defaultHome.order.length} blocos)`
+    )
+  } else {
+    logger.info("[DX] Template da home já existe — preservando edições do lojista")
   }
 
   // 12) Resumo final ----------------------------------------------------

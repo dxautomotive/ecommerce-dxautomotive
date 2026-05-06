@@ -28,5 +28,9 @@ export default defineMiddlewares({
       matcher: "/store/products/by-vehicle",
       method: ["GET"],
     },
+    {
+      matcher: "/store/page-builder/:template",
+      method: ["GET"],
+    },
   ],
 })
