@@ -56,6 +56,16 @@ export default function ProductTemplateDX({
   const sku = product.variants?.[0]?.sku
   const aiSummaryItems = extractAiSummary(meta, product)
 
+  // Mapa variantId → imageId vindo de `variant.metadata.image_id` (curado no
+  // admin via VariantImagesPicker). A galeria escuta `dx:variant-changed`
+  // e ativa a imagem associada quando o cliente troca a opção.
+  const variantImageMap: Record<string, string> = {}
+  for (const v of product.variants ?? []) {
+    const imgId = (v.metadata as { image_id?: unknown } | null | undefined)
+      ?.image_id
+    if (typeof imgId === "string" && imgId) variantImageMap[v.id] = imgId
+  }
+
   return (
     <>
       <Breadcrumb product={product} />
@@ -65,7 +75,12 @@ export default function ProductTemplateDX({
         data-testid="product-container"
       >
         <div className="large:col-span-6 min-w-0">
-          <ProductGalleryDX images={images} alt={product.title || ""} />
+          <ProductGalleryDX
+            images={images}
+            alt={product.title || ""}
+            variantImageMap={variantImageMap}
+            initialVariantId={product.variants?.[0]?.id}
+          />
         </div>
 
         <div className="large:col-span-3 flex flex-col gap-4 min-w-0">

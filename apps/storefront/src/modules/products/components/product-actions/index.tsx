@@ -91,6 +91,16 @@ export default function ProductActions({
     router.replace(pathname + "?" + params.toString())
   }, [selectedVariant, isValidVariant])
 
+  // Notifica componentes interessados (ex.: <ProductGalleryDX>) sobre a troca
+  // de variante. Permite que a galeria ative a imagem associada à variante
+  // (campo `metadata.image_id`).
+  useEffect(() => {
+    if (!selectedVariant?.id) return
+    window.dispatchEvent(
+      new CustomEvent("dx:variant-changed", { detail: selectedVariant.id })
+    )
+  }, [selectedVariant?.id])
+
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
     // If we don't manage inventory, we can always add to cart

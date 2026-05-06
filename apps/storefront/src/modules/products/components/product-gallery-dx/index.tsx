@@ -7,6 +7,19 @@ import { useEffect, useState } from "react"
 type Props = {
   images: HttpTypes.StoreProductImage[]
   alt: string
+  /**
+   * Mapa `variantId → imageId` extraído do `metadata.image_id` de cada
+   * variante. Quando o cliente troca a variante na PDP (via `<ProductActions>`),
+   * a galeria escuta `dx:variant-changed` e ativa a imagem associada — comportamento
+   * estilo Shopify.
+   */
+  variantImageMap?: Record<string, string>
+  /**
+   * Variante inicial ativa (a default ou a única do produto). Usado pra ativar
+   * a imagem associada já no mount, sem esperar o evento `dx:variant-changed`
+   * que pode ser emitido pelo `<ProductActions>` antes do listener registrar.
+   */
+  initialVariantId?: string
 }
 
 /**
@@ -25,10 +38,43 @@ type Props = {
  * O hover-zoom anterior foi removido em favor do lightbox — comportamento
  * mais alinhado com KaBuM/Mercado Livre/grandes e-commerces brasileiros.
  */
-export default function ProductGalleryDX({ images, alt }: Props) {
+export default function ProductGalleryDX({
+  images,
+  alt,
+  variantImageMap,
+  initialVariantId,
+}: Props) {
   const safe = images?.filter(Boolean) ?? []
-  const [active, setActive] = useState(0)
+
+  // Calcula a imagem ativa inicial: se variant tem image associada, ativa ela
+  const initialActive = (() => {
+    if (!variantImageMap || !initialVariantId) return 0
+    const imgId = variantImageMap[initialVariantId]
+    if (!imgId) return 0
+    const idx = safe.findIndex((img) => img.id === imgId)
+    return idx >= 0 ? idx : 0
+  })()
+
+  const [active, setActive] = useState(initialActive)
   const [lightbox, setLightbox] = useState(false)
+
+  // Escuta troca de variante (emitido pelo <ProductActions>) e ativa a imagem
+  // associada à variante no metadata. Se a variante não tem imagem associada
+  // ou a imagem associada não existe mais no produto, mantém a atual.
+  useEffect(() => {
+    if (!variantImageMap) return
+    const onVariantChange = (e: Event) => {
+      const variantId = (e as CustomEvent<string>).detail
+      if (!variantId) return
+      const imgId = variantImageMap[variantId]
+      if (!imgId) return
+      const idx = safe.findIndex((img) => img.id === imgId)
+      if (idx >= 0) setActive(idx)
+    }
+    window.addEventListener("dx:variant-changed", onVariantChange)
+    return () =>
+      window.removeEventListener("dx:variant-changed", onVariantChange)
+  }, [variantImageMap, safe])
 
   // ESC fecha o lightbox
   useEffect(() => {
