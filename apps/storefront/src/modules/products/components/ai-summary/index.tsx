@@ -1,30 +1,45 @@
 "use client"
 
-import { useState } from "react"
-
 type Props = {
-  /**
-   * Lista de bullets do resumo (HTML simples permitido em cada item — ex.: <strong>).
-   * Preferimos receber pré-processado pelo server pra não precisar IA em runtime;
-   * fallback gera 2-3 highlights da descrição quando vazio.
-   */
+  /** Bullets do resumo (HTML simples permitido em cada item — ex.: <strong>) */
   items: string[]
+  /**
+   * ID do elemento DOM pra scroll suave quando clicar em "Ver descrição completa".
+   * Default: "produto-detalhes" (a section full-width com `<ProductTabsDX>`).
+   */
+  scrollTargetId?: string
+  /** Quantos bullets mostrar antes de oferecer o link pra descrição completa */
+  truncateAt?: number
 }
 
 /**
  * AI Summary v2.1 (seção 9.2 do guide).
  *
- * Bullets gerados por IA (preprocessados ou da metadata). Trunca em 2 itens;
- * "Ver mais" expande inline. Fica entre stars e CompatibilityChecker, na col 2
- * (info center) da PDP 3 colunas.
+ * Mostra os primeiros N bullets do resumo (default 2) e oferece um link
+ * "Ver descrição completa →" que rola suavemente pra section full-width
+ * abaixo do grid 3 colunas (onde fica o `<ProductTabsDX>` com tudo).
+ *
+ * Comportamento alinhado com KaBuM: a coluna info center fica enxuta com
+ * só o resumo + verificador de compatibilidade; a descrição completa,
+ * specs, compatibilidade e avaliações ficam abaixo do grid em largura cheia.
  */
-export default function AiSummary({ items }: Props) {
-  const [expanded, setExpanded] = useState(false)
-
+export default function AiSummary({
+  items,
+  scrollTargetId = "produto-detalhes",
+  truncateAt = 2,
+}: Props) {
   if (!items || items.length === 0) return null
 
-  const visible = expanded ? items : items.slice(0, 2)
-  const remaining = items.length - 2
+  const visible = items.slice(0, truncateAt)
+  const hasMore = items.length > truncateAt
+
+  const handleVerMais = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    const el = document.getElementById(scrollTargetId)
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+  }
 
   return (
     <div className="bg-brand-surface-2 border border-brand-border rounded-xl p-4">
@@ -46,15 +61,15 @@ export default function AiSummary({ items }: Props) {
           <span dangerouslySetInnerHTML={{ __html: item }} />
         </div>
       ))}
-      {!expanded && remaining > 0 && (
-        <button
-          type="button"
-          onClick={() => setExpanded(true)}
-          className="inline-flex items-center gap-1 text-[12px] font-bold text-brand-primary mt-2.5 cursor-pointer hover:text-brand-cyan transition-colors"
+      {hasMore && (
+        <a
+          href={`#${scrollTargetId}`}
+          onClick={handleVerMais}
+          className="inline-flex items-center gap-1 text-[12px] font-bold text-brand-primary mt-3 cursor-pointer hover:text-brand-cyan transition-colors"
         >
-          Ver mais ({remaining})
+          Ver descrição completa
           <ChevronDownIcon />
-        </button>
+        </a>
       )}
     </div>
   )
