@@ -26,5 +26,11 @@ export const Review = model.define("review", {
     .default("pending"),
   verified_purchase: model.boolean().default(false),
   helpful_count: model.number().default(0),
+  /**
+   * URLs públicas das fotos enviadas pelo cliente. Hoje vazio por default —
+   * upload via Cloudflare R2 + signed URL será implementado quando a infra
+   * R2 estiver configurada. Já reservado pra evitar nova migration depois.
+   */
+  images: model.json().nullable(),
   internal_notes: model.text().nullable(),
 })

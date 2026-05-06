@@ -74,6 +74,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
       author_name: r.author_name,
       verified_purchase: r.verified_purchase,
       helpful_count: r.helpful_count,
+      images: Array.isArray((r as unknown as { images?: unknown }).images)
+        ? ((r as unknown as { images: string[] }).images)
+        : [],
       created_at: (r as unknown as { created_at?: Date }).created_at,
     })),
     count,
