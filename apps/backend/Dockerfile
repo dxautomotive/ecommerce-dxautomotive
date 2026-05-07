@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libvips42 \
   && rm -rf /var/lib/apt/lists/*
 RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps \
-  && npm install sharp --no-audit --no-fund
+  && npm install sharp --no-audit --no-fund --legacy-peer-deps
 
 ENV NODE_ENV=production
 ENV PORT=9000
