@@ -22,6 +22,8 @@ import {
 } from "@medusajs/medusa/core-flows"
 import { VEHICLE_COMPATIBILITY_MODULE } from "../modules/vehicle_compatibility"
 import VehicleCompatibilityModuleService from "../modules/vehicle_compatibility/service"
+import { NAVIGATION_MENUS_MODULE } from "../modules/navigation_menus"
+import NavigationMenusModuleService from "../modules/navigation_menus/service"
 import { buildDefaultHomeTemplate } from "../page-builder/default-templates"
 
 /**
@@ -647,6 +649,156 @@ export default async function dxBootstrap({ container }: ExecArgs) {
     )
   } else {
     logger.info("[DX] Template da home já existe — preservando edições do lojista")
+  }
+
+  // 11c) Menus padrão (header / footer-categorias / footer-atendimento) ──
+  // Idempotente: cria menu+items só se não existirem (lookup por label dentro
+  // do menu). Não sobrescreve edições do lojista.
+  const menuSvc = container.resolve<NavigationMenusModuleService>(
+    NAVIGATION_MENUS_MODULE
+  )
+
+  const catByHandle = new Map(
+    (categories as Array<{ id: string; handle: string }>).map((c) => [
+      c.handle,
+      c.id,
+    ])
+  )
+
+  type SeedItem = {
+    label: string
+    type: "link" | "category" | "collection" | "external"
+    target_handle?: string // categoria/coleção
+    target_url?: string
+    open_in_new_tab?: boolean
+  }
+  type SeedMenu = {
+    handle: string
+    label: string
+    position: number
+    items: SeedItem[]
+  }
+
+  const seedMenus: SeedMenu[] = [
+    {
+      handle: "header",
+      label: "Menu principal",
+      position: 0,
+      items: [
+        { label: "Multimídia", type: "category", target_handle: "multimidia" },
+        { label: "Molduras", type: "category", target_handle: "molduras" },
+        { label: "Câmera de Ré", type: "category", target_handle: "camera-de-re" },
+        {
+          label: "Sensor",
+          type: "category",
+          target_handle: "sensor-de-estacionamento",
+        },
+        { label: "Coleções", type: "link", target_url: "/colecoes" },
+        { label: "Atacado", type: "link", target_url: "/atacado" },
+      ],
+    },
+    {
+      handle: "footer-categorias",
+      label: "Footer · Categorias",
+      position: 1,
+      items: [
+        { label: "Multimídia", type: "category", target_handle: "multimidia" },
+        { label: "Molduras", type: "category", target_handle: "molduras" },
+        { label: "Câmera de Ré", type: "category", target_handle: "camera-de-re" },
+        {
+          label: "Sensor",
+          type: "category",
+          target_handle: "sensor-de-estacionamento",
+        },
+      ],
+    },
+    {
+      handle: "footer-atendimento",
+      label: "Footer · Atendimento",
+      position: 2,
+      items: [
+        { label: "Atacado / Revenda", type: "link", target_url: "/atacado" },
+        { label: "Política de privacidade", type: "link", target_url: "/politicas/privacidade" },
+        { label: "Política de trocas", type: "link", target_url: "/politicas/trocas" },
+        { label: "Termos de uso", type: "link", target_url: "/politicas/termos" },
+      ],
+    },
+  ]
+
+  // Resolver collection ids por handle pra eventuais items de coleção
+  const colByHandle = new Map(
+    allCollections.map((c) => [c.handle, c.id])
+  )
+
+  const existingMenus = await menuSvc.listMenus({}, { take: 100 })
+  const menuByHandle = new Map(existingMenus.map((m) => [m.handle, m]))
+
+  for (const seed of seedMenus) {
+    let menu = menuByHandle.get(seed.handle)
+    if (!menu) {
+      const [created] = await menuSvc.createMenus([
+        {
+          handle: seed.handle,
+          label: seed.label,
+          position: seed.position,
+          is_default: true,
+        },
+      ])
+      menu = created
+      logger.info(`[DX] Menu '${seed.handle}' criado (is_default)`)
+    } else if (!(menu as { is_default?: boolean }).is_default) {
+      // Idempotência: marca menus seedados antigos como default na próxima rodada
+      await menuSvc.updateMenus({ id: menu.id, is_default: true })
+      logger.info(`[DX] Menu '${seed.handle}' marcado como is_default=true`)
+    }
+
+    const existingItems = await menuSvc.listMenuItems(
+      { menu_id: menu.id },
+      { take: 200 }
+    )
+    const existingLabels = new Set(existingItems.map((i) => i.label))
+
+    const itemsToCreate = seed.items
+      .filter((it) => !existingLabels.has(it.label))
+      .map((it, idx) => {
+        const target_id =
+          it.type === "category"
+            ? catByHandle.get(it.target_handle ?? "") ?? null
+            : it.type === "collection"
+            ? colByHandle.get(it.target_handle ?? "") ?? null
+            : null
+        return {
+          menu_id: menu!.id,
+          parent_item_id: null,
+          label: it.label,
+          type: it.type,
+          target_id,
+          target_url: it.target_url ?? null,
+          position: existingItems.length + idx,
+          open_in_new_tab: it.open_in_new_tab === true,
+        }
+      })
+      .filter((it) => {
+        // descarta items de category/collection cujo handle não existe
+        if (it.type === "category" || it.type === "collection") {
+          if (!it.target_id) {
+            logger.warn(
+              `[DX] Menu '${seed.handle}': item '${it.label}' ignorado — target não encontrado`
+            )
+            return false
+          }
+        }
+        return true
+      })
+
+    if (itemsToCreate.length > 0) {
+      await menuSvc.createMenuItems(itemsToCreate)
+      logger.info(
+        `[DX] Menu '${seed.handle}': ${itemsToCreate.length} items criados`
+      )
+    } else {
+      logger.info(`[DX] Menu '${seed.handle}': items já existem`)
+    }
   }
 
   // 12) Resumo final ----------------------------------------------------

@@ -2,6 +2,7 @@ import { Suspense } from "react"
 
 import { listLocales } from "@lib/data/locales"
 import { getLocale } from "@lib/data/locale-actions"
+import { getMenu } from "@lib/data/menus"
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -10,7 +11,10 @@ import CartButton from "@modules/layout/components/cart-button"
 import SearchInput from "@modules/layout/components/search-input"
 import SideMenu from "@modules/layout/components/side-menu"
 
-const PRIMARY_LINKS = [
+// Fallback usado quando o menu `header` ainda não foi cadastrado no admin
+// (primeira instalação) ou quando o endpoint falha. Mantém paridade com o
+// layout original hardcoded.
+const PRIMARY_LINKS_FALLBACK = [
   { label: "Multimídia", href: "/categories/multimidia" },
   { label: "Molduras", href: "/categories/molduras" },
   { label: "Câmera de Ré", href: "/categories/camera-de-re" },
@@ -27,11 +31,23 @@ const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponen
 )}`
 
 export default async function Nav() {
-  const [regions, locales, currentLocale] = await Promise.all([
+  const [regions, locales, currentLocale, headerMenu] = await Promise.all([
     listRegions().then((regions: StoreRegion[]) => regions),
     listLocales(),
     getLocale(),
+    getMenu("header"),
   ])
+
+  // Menu vindo do admin substitui o fallback hardcoded; itens externos podem
+  // abrir em nova aba (open_in_new_tab) usando <a> em vez do link localizado.
+  const primaryLinks =
+    headerMenu && headerMenu.items.length > 0
+      ? headerMenu.items.map((it) => ({
+          label: it.label,
+          href: it.href,
+          external: it.type === "external" || it.open_in_new_tab,
+        }))
+      : PRIMARY_LINKS_FALLBACK.map((l) => ({ ...l, external: false }))
 
   return (
     <div className="relative inset-x-0 z-50">
@@ -158,14 +174,25 @@ export default async function Nav() {
             </div>
             <div className="h-4 w-px bg-brand-border mx-3" />
             <ul className="flex items-center gap-1 flex-wrap">
-              {PRIMARY_LINKS.map((l) => (
-                <li key={l.href}>
-                  <LocalizedClientLink
-                    href={l.href}
-                    className="px-3 py-1.5 text-sm text-brand-muted hover:text-brand-text hover:bg-brand-surface rounded transition-colors"
-                  >
-                    {l.label}
-                  </LocalizedClientLink>
+              {primaryLinks.map((l) => (
+                <li key={`${l.label}-${l.href}`}>
+                  {l.external ? (
+                    <a
+                      href={l.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-sm text-brand-muted hover:text-brand-text hover:bg-brand-surface rounded transition-colors"
+                    >
+                      {l.label}
+                    </a>
+                  ) : (
+                    <LocalizedClientLink
+                      href={l.href}
+                      className="px-3 py-1.5 text-sm text-brand-muted hover:text-brand-text hover:bg-brand-surface rounded transition-colors"
+                    >
+                      {l.label}
+                    </LocalizedClientLink>
+                  )}
                 </li>
               ))}
             </ul>

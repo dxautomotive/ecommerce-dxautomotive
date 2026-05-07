@@ -26,5 +26,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/product_relationships",
     },
+    {
+      resolve: "./src/modules/navigation_menus",
+    },
   ],
 })
