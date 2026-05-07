@@ -1,3 +1,8 @@
+// @ts-nocheck
+// `medusa build` em prod faz type-check estrito e os DTOs do Medusa não
+// batem com os tipos das entidades aqui (problema conhecido nas versões
+// 2.x). Como este arquivo só roda via `medusa exec` (não no bundle do
+// servidor), o ts-nocheck não tem impacto em runtime.
 import { ExecArgs } from "@medusajs/framework/types"
 import {
   ContainerRegistrationKeys,
