@@ -13,9 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Cópia em 2 passos pra cachear melhor o `npm ci`
-COPY package.json package-lock.json ./
-RUN npm ci
+# Monorepo npm workspaces: o lockfile vive na raiz do repo, não em
+# `apps/backend`. Como o build context é só este workspace, usamos
+# `npm install` (não `npm ci`) — gera lockfile efêmero, build determinístico
+# o suficiente porque o repo já tem o lockfile da raiz validado.
+COPY package.json ./
+RUN npm install --no-audit --no-fund
 
 COPY . .
 
@@ -33,7 +36,7 @@ WORKDIR /app
 
 # Apenas o output do build + deps de prod do server bundle
 COPY --from=builder /app/.medusa/server ./
-RUN npm install --omit=dev
+RUN npm install --omit=dev --no-audit --no-fund
 
 ENV NODE_ENV=production
 ENV PORT=9000
