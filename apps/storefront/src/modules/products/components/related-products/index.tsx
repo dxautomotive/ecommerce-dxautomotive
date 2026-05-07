@@ -50,7 +50,10 @@ export default async function RelatedProducts({
   if (!products.length) return null
 
   return (
-    <div>
+    <section
+      className="content-container py-3 pb-8"
+      data-testid="related-products-container"
+    >
       <h2 className="text-[20px] small:text-[24px] font-extrabold text-brand-text mb-5">
         Produtos relacionados
       </h2>
@@ -61,6 +64,6 @@ export default async function RelatedProducts({
           </li>
         ))}
       </ul>
-    </div>
+    </section>
   )
 }

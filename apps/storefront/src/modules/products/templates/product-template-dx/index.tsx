@@ -186,14 +186,18 @@ export default function ProductTemplateDX({
         <GuaranteeHighlight />
       </div>
 
-      <section
-        className="content-container py-3 pb-12 small:pb-16"
-        data-testid="related-products-container"
+      {/* RelatedProducts renderiza a própria section com padding.
+          Quando não há produtos (mesma coleção/tags), retorna null e o
+          footer cola direto após a Garantia. */}
+      <Suspense
+        fallback={
+          <div className="content-container py-3">
+            <SkeletonRelatedProducts />
+          </div>
+        }
       >
-        <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts product={product} countryCode={countryCode} />
-        </Suspense>
-      </section>
+        <RelatedProducts product={product} countryCode={countryCode} />
+      </Suspense>
     </>
   )
 }

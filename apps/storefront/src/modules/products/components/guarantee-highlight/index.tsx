@@ -10,7 +10,7 @@ import LocalizedClientLink from "@modules/common/components/localized-client-lin
  */
 const GuaranteeHighlight = () => {
   return (
-    <section className="content-container my-12 small:my-16">
+    <section className="content-container">
       <div className="bg-brand-surface border border-brand-border rounded-2xl overflow-hidden">
         <header className="px-6 small:px-10 py-6 small:py-8 border-b border-brand-border bg-gradient-to-r from-brand-success/15 to-transparent">
           <div className="flex items-start gap-4">
