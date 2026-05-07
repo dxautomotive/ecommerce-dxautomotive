@@ -1,0 +1,78 @@
+# Stack de produção do DX Automotive backend.
+# Vive em /opt/dx-automotive/ na VPS Hetzner.
+#
+# Serviços:
+#  - postgres (16): banco principal, volume em /var/lib/dx-automotive/postgres
+#  - redis (7):     cache + event bus, volume em /var/lib/dx-automotive/redis
+#  - medusa:        backend Node.js (build pelo apps/backend/Dockerfile)
+#
+# nginx + certbot ficam FORA do compose (instalados via apt na VPS).
+# Medusa expõe 9000 só em 127.0.0.1 — nginx faz proxy_pass http://localhost:9000.
+
+name: dx-automotive
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dx-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - /var/lib/dx-automotive/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dx-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dx-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - /var/lib/dx-automotive/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dx-network
+
+  medusa:
+    build:
+      context: /opt/dx-automotive/repo/apps/backend
+      dockerfile: Dockerfile
+    container_name: dx-medusa
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      STORE_CORS: ${STORE_CORS}
+      ADMIN_CORS: ${ADMIN_CORS}
+      AUTH_CORS: ${AUTH_CORS}
+      MEDUSA_BACKEND_URL: ${MEDUSA_BACKEND_URL}
+      MEDUSA_ADMIN_BACKEND_URL: ${MEDUSA_ADMIN_BACKEND_URL}
+      DISABLE_MEDUSA_ADMIN: "false"
+    ports:
+      - "127.0.0.1:9000:9000"
+    networks:
+      - dx-network
+
+networks:
+  dx-network:
+    driver: bridge
