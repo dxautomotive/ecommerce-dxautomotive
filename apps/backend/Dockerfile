@@ -18,7 +18,7 @@ WORKDIR /app
 # `npm install` (não `npm ci`) — gera lockfile efêmero, build determinístico
 # o suficiente porque o repo já tem o lockfile da raiz validado.
 COPY package.json ./
-RUN npm install --no-audit --no-fund
+RUN npm install --no-audit --no-fund --legacy-peer-deps
 
 COPY . .
 
@@ -36,7 +36,7 @@ WORKDIR /app
 
 # Apenas o output do build + deps de prod do server bundle
 COPY --from=builder /app/.medusa/server ./
-RUN npm install --omit=dev --no-audit --no-fund
+RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
 
 ENV NODE_ENV=production
 ENV PORT=9000
