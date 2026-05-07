@@ -41,7 +41,13 @@ WORKDIR /app
 
 # Apenas o output do build + deps de prod do server bundle
 COPY --from=builder /app/.medusa/server ./
-RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps
+# `sharp` é resolvido dinamicamente nas rotas de reviews — não entra no
+# package.json do server bundle. Instala explícito + libvips runtime.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libvips42 \
+  && rm -rf /var/lib/apt/lists/*
+RUN npm install --omit=dev --no-audit --no-fund --legacy-peer-deps \
+  && npm install sharp --no-audit --no-fund
 
 ENV NODE_ENV=production
 ENV PORT=9000
