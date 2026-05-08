@@ -6,49 +6,69 @@ type Props = {
   subtitle?: string
   ctaLabel?: string
   ctaUrl?: string
-  /** ISO 8601. Se vazio, cai no "próximo domingo às 23:59" como fallback. */
   endsAtIso?: string
 }
 
-/**
- * Banner com countdown de oferta relâmpago. Settings configuráveis
- * via /app/page-builder.
- */
 export default function FlashSaleBanner({
-  title = "Oferta relâmpago em multimídia",
-  subtitle = "Até 15% off em centrais selecionadas, com Pix e parcelamento em 6x sem juros. Estoque limitado.",
-  ctaLabel = "Ver multimídia em oferta →",
-  ctaUrl = "/categories/multimidia",
+  title = "Black Week DX",
+  subtitle = "Até 25% off + Pix com 10% adicional em centrais multimídia",
+  ctaLabel = "Aproveitar agora",
+  ctaUrl = "/store",
   endsAtIso,
 }: Props = {}) {
   const ends = endsAtIso && endsAtIso.trim() ? endsAtIso : nextSundayAtMidnight()
 
   return (
     <section className="content-container py-8">
-      <div className="rounded-2xl border border-brand-border bg-gradient-to-r from-red-950 via-brand-surface to-red-950 p-6 small:p-8 flex flex-col medium:flex-row items-center justify-between gap-6">
-        <div className="flex flex-col gap-2 max-w-xl">
-          <span className="text-brand-danger text-xs uppercase tracking-[0.3em] font-bold">
-            ⚡ Esta semana
-          </span>
-          <h2 className="text-2xl small:text-3xl font-extrabold text-brand-text leading-tight">
-            {title}
-          </h2>
-          <p className="text-brand-muted text-sm small:text-base">{subtitle}</p>
-          <LocalizedClientLink
-            href={ctaUrl}
-            className="self-start mt-2 bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold px-5 py-2.5 rounded transition-colors"
-          >
-            {ctaLabel}
-          </LocalizedClientLink>
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-950">
+        {/* Glow orbs */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-blue-500/20 blur-3xl" />
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-indigo-600/25 blur-3xl" />
         </div>
-
-        <CountdownTimer
-          endsAt={ends}
-          eyebrow="Termina em"
-          variant="danger"
-          size="md"
-          showDays
+        {/* Textura diagonal */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.04]"
+          style={{ background: "repeating-linear-gradient(60deg, transparent, transparent 60px, #fff 60px, #fff 61px)" }}
         />
+
+        {/* ── Layout principal ──────────────────────────────────── */}
+        <div className="relative z-10 px-6 py-5 small:px-10 small:py-6 flex flex-col medium:flex-row medium:items-stretch gap-5">
+
+          {/* Esquerda — badge · título · subtítulo */}
+          <div className="flex flex-col justify-center gap-2.5 flex-1">
+            <span className="inline-flex w-fit items-center gap-1.5 bg-amber-400 text-black text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-[0.15em]">
+              ⚡ Esta semana
+            </span>
+            <h2 className="text-3xl small:text-4xl font-extrabold text-white leading-tight">
+              {title}
+            </h2>
+            <p className="text-white/70 text-sm small:text-base leading-relaxed max-w-md">
+              {subtitle}
+            </p>
+          </div>
+
+          {/* Direita — timer em cima · botão embaixo */}
+          {/* items-stretch no pai faz esta coluna ter a mesma altura que a esquerda  */}
+          {/* justify-between empurra timer pro topo e botão pro fundo — alinhados   */}
+          <div className="flex flex-col items-start medium:items-end justify-between gap-4 medium:min-w-[280px]">
+            <CountdownTimer
+              endsAt={ends}
+              eyebrow="Termina em"
+              variant="glass"
+              size="sm"
+              showDays
+            />
+            <LocalizedClientLink
+              href={ctaUrl}
+              className="inline-flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-black font-extrabold px-6 py-3 rounded-lg transition-colors text-sm tracking-wide shadow-lg shadow-amber-400/20 w-full medium:w-auto"
+            >
+              {ctaLabel}
+              <span aria-hidden="true">→</span>
+            </LocalizedClientLink>
+          </div>
+
+        </div>
       </div>
     </section>
   )
@@ -56,7 +76,7 @@ export default function FlashSaleBanner({
 
 function nextSundayAtMidnight() {
   const d = new Date()
-  const day = d.getDay() // 0 = domingo
+  const day = d.getDay()
   const diffToSunday = (7 - day) % 7 || 7
   const sunday = new Date(d)
   sunday.setDate(d.getDate() + diffToSunday)

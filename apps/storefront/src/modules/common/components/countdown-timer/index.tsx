@@ -12,7 +12,7 @@ type Props = {
   /** Mostra/esconde o quadro de DIAS (deixe `false` se a campanha for curta) */
   showDays?: boolean
   /** Variante visual */
-  variant?: "dark" | "danger" | "warning"
+  variant?: "dark" | "danger" | "warning" | "glass"
   /** Texto-chamada antes do timer (ex.: "🔥 OFERTA RELÂMPAGO") */
   eyebrow?: string
   /** Tamanho dos quadros (default md) */
@@ -60,20 +60,30 @@ export default function CountdownTimer({
     dark: {
       wrap: "bg-brand-surface border border-brand-border",
       box: "bg-brand-bg border-brand-border text-brand-text",
+      boxLabel: "text-brand-muted",
       sep: "text-brand-muted",
       eyebrow: "text-brand-primary",
     },
     danger: {
       wrap: "bg-gradient-to-r from-red-900/40 via-brand-surface to-red-900/40 border border-brand-danger/30",
       box: "bg-brand-bg border-brand-danger/40 text-brand-text",
+      boxLabel: "text-brand-muted",
       sep: "text-brand-danger",
       eyebrow: "text-brand-danger",
     },
     warning: {
       wrap: "bg-gradient-to-r from-orange-900/40 via-brand-surface to-orange-900/40 border border-brand-warning/30",
       box: "bg-brand-bg border-brand-warning/40 text-brand-text",
+      boxLabel: "text-brand-muted",
       sep: "text-brand-warning",
       eyebrow: "text-brand-warning",
+    },
+    glass: {
+      wrap: "bg-white/5 backdrop-blur-sm border border-white/10",
+      box: "bg-white/10 border-white/20 text-white",
+      boxLabel: "text-white/55",
+      sep: "text-white/40",
+      eyebrow: "text-amber-300",
     },
   }[variant]
 
@@ -89,12 +99,12 @@ export default function CountdownTimer({
 
   const Box = ({ value, label }: { value: number; label: string }) => (
     <div
-      className={`flex flex-col items-center justify-center rounded ${sizes.box} ${palette.box} font-mono`}
+      className={`flex flex-col items-center justify-center rounded border ${sizes.box} ${palette.box} font-mono`}
     >
       <span className={`${sizes.num} font-extrabold tabular-nums leading-none`}>
         {value.toString().padStart(2, "0")}
       </span>
-      <span className={`${sizes.label} text-brand-muted uppercase tracking-wider mt-0.5`}>
+      <span className={`${sizes.label} ${palette.boxLabel} uppercase tracking-wider mt-0.5`}>
         {label}
       </span>
     </div>

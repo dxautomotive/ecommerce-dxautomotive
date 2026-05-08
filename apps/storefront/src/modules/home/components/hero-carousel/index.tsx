@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
+type Feature = { icon: string; label: string; sub: string }
+
 type Slide = {
   eyebrow?: string
   title: string
@@ -10,10 +12,9 @@ type Slide = {
   description: string
   primaryCta: { label: string; href: string }
   secondaryCta?: { label: string; href: string }
-  /** classes Tailwind para o gradient de fundo do slide */
-  gradient: string
-  /** texto SVG decorativo (placeholder até subir imagens reais) */
-  emoji?: string
+  /** gradient de cor aplicado sobre o fundo dark */
+  accentGradient: string
+  features: Feature[]
 }
 
 const SLIDES: Slide[] = [
@@ -25,21 +26,31 @@ const SLIDES: Slide[] = [
       "Centrais multimídia, molduras, câmeras e sensores com instalação plug-and-play. Frete para todo o Brasil.",
     primaryCta: { label: "Ver produtos", href: "/store" },
     secondaryCta: { label: "Multimídia para meu carro", href: "/categories/multimidia" },
-    gradient:
-      "bg-[radial-gradient(ellipse_at_30%_30%,rgba(0,102,255,0.35)_0%,transparent_55%),radial-gradient(ellipse_at_70%_70%,rgba(0,102,255,0.2)_0%,transparent_55%)]",
-    emoji: "🚗",
+    accentGradient:
+      "radial-gradient(ellipse at 70% 40%, rgba(59,130,246,0.45) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(99,102,241,0.3) 0%, transparent 55%)",
+    features: [
+      { icon: "📱", label: "Android Auto", sub: "e Apple CarPlay" },
+      { icon: "🛰️", label: "GPS integrado", sub: "mapas offline" },
+      { icon: "🔌", label: "Plug & Play", sub: "sem modificar" },
+      { icon: "🚚", label: "Frete grátis", sub: "todo o Brasil" },
+    ],
   },
   {
     eyebrow: "Linha Multimídia",
     title: "Android Auto e CarPlay",
     highlight: "sem fio.",
     description:
-      "Centrais com tela de 9 e 10 polegadas, GPS integrado e plug-and-play para os principais modelos do mercado.",
+      "Telas de 9 e 10 polegadas, GPS integrado e compatibilidade verificada por modelo de veículo.",
     primaryCta: { label: "Ver multimídia", href: "/categories/multimidia" },
     secondaryCta: { label: "Falar com vendedor", href: "/store?q=multimidia" },
-    gradient:
-      "bg-[radial-gradient(ellipse_at_70%_30%,rgba(0,200,81,0.28)_0%,transparent_55%),radial-gradient(ellipse_at_20%_70%,rgba(0,102,255,0.25)_0%,transparent_55%)]",
-    emoji: "📱",
+    accentGradient:
+      "radial-gradient(ellipse at 70% 40%, rgba(16,185,129,0.45) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(59,130,246,0.3) 0%, transparent 55%)",
+    features: [
+      { icon: "📺", label: "Tela 9–10″", sub: "Full HD" },
+      { icon: "🎵", label: "Bluetooth 5.0", sub: "streaming" },
+      { icon: "🏎️", label: "Compatível", sub: "por modelo" },
+      { icon: "⚡", label: "Instalação", sub: "em 30 min" },
+    ],
   },
   {
     eyebrow: "Compre em volume",
@@ -48,9 +59,14 @@ const SLIDES: Slide[] = [
     description:
       "Preços especiais para revendedores e oficinas. Cotação rápida pelo WhatsApp, sem burocracia.",
     primaryCta: { label: "Pedir cotação", href: "/atacado" },
-    gradient:
-      "bg-[radial-gradient(ellipse_at_50%_30%,rgba(255,107,0,0.28)_0%,transparent_55%),radial-gradient(ellipse_at_80%_80%,rgba(0,102,255,0.2)_0%,transparent_55%)]",
-    emoji: "🤝",
+    accentGradient:
+      "radial-gradient(ellipse at 70% 40%, rgba(245,158,11,0.45) 0%, transparent 60%), radial-gradient(ellipse at 20% 80%, rgba(239,68,68,0.25) 0%, transparent 55%)",
+    features: [
+      { icon: "💰", label: "Preço atacado", sub: "a partir de 5 un" },
+      { icon: "📦", label: "Estoque pronto", sub: "envio imediato" },
+      { icon: "🤝", label: "Suporte B2B", sub: "WhatsApp direto" },
+      { icon: "🧾", label: "Nota fiscal", sub: "para CNPJ" },
+    ],
   },
 ] as const
 
@@ -65,9 +81,9 @@ export default function HeroCarousel() {
   return (
     <section
       aria-label="Banner principal"
-      className="relative w-full overflow-hidden bg-brand-bg border-b border-brand-border"
+      className="relative w-full overflow-hidden bg-slate-900"
     >
-      <div className="relative min-h-[55vh] small:min-h-[68vh]">
+      <div className="relative min-h-[58vh] small:min-h-[65vh]">
         {SLIDES.map((s, i) => (
           <div
             key={s.title}
@@ -76,32 +92,48 @@ export default function HeroCarousel() {
               i === active ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
           >
-            <div className={`absolute inset-0 ${s.gradient}`} aria-hidden="true" />
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-bg via-brand-bg/80 to-transparent" aria-hidden="true" />
+            {/* Gradiente colorido do slide */}
+            <div
+              className="absolute inset-0"
+              style={{ background: s.accentGradient }}
+              aria-hidden="true"
+            />
+            {/* Textura sutil de grid */}
+            <div
+              className="absolute inset-0 opacity-[0.03]"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
+                backgroundSize: "48px 48px",
+              }}
+              aria-hidden="true"
+            />
 
-            <div className="relative content-container h-full min-h-[55vh] small:min-h-[68vh] grid grid-cols-1 medium:grid-cols-2 items-center gap-8 py-16 small:py-24">
+            <div className="relative content-container h-full min-h-[58vh] small:min-h-[65vh] grid grid-cols-1 medium:grid-cols-2 items-center gap-8 py-14 small:py-20">
+
+              {/* ── Coluna de texto ── */}
               <div className="flex flex-col gap-5 max-w-2xl">
                 {s.eyebrow && (
-                  <span className="text-brand-primary text-xs uppercase tracking-[0.25em] font-semibold">
+                  <span className="text-blue-400 text-xs uppercase tracking-[0.25em] font-semibold">
                     {s.eyebrow}
                   </span>
                 )}
-                <h1 className="text-4xl small:text-5xl medium:text-6xl leading-[1.05] text-brand-text font-extrabold">
+                <h1 className="text-4xl small:text-5xl medium:text-6xl leading-[1.05] text-white font-extrabold">
                   {s.title}
                   {s.highlight && (
                     <>
                       {" "}
-                      <span className="text-brand-primary">{s.highlight}</span>
+                      <span className="text-blue-400">{s.highlight}</span>
                     </>
                   )}
                 </h1>
-                <p className="text-brand-muted text-base small:text-lg leading-relaxed">
+                <p className="text-white/65 text-base small:text-lg leading-relaxed">
                   {s.description}
                 </p>
                 <div className="flex flex-wrap gap-3 mt-2">
                   <LocalizedClientLink
                     href={s.primaryCta.href}
-                    className="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold px-6 py-3 rounded-md shadow-lg shadow-brand-primary/20 transition-colors"
+                    className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-semibold px-6 py-3 rounded-md shadow-lg shadow-blue-500/25 transition-colors"
                   >
                     {s.primaryCta.label}
                     <span aria-hidden="true">→</span>
@@ -109,7 +141,7 @@ export default function HeroCarousel() {
                   {s.secondaryCta && (
                     <LocalizedClientLink
                       href={s.secondaryCta.href}
-                      className="inline-flex items-center border border-brand-border hover:border-brand-primary text-brand-text hover:text-brand-primary font-semibold px-6 py-3 rounded-md transition-colors"
+                      className="inline-flex items-center border border-white/25 hover:border-white/60 text-white/80 hover:text-white font-semibold px-6 py-3 rounded-md transition-colors"
                     >
                       {s.secondaryCta.label}
                     </LocalizedClientLink>
@@ -117,29 +149,34 @@ export default function HeroCarousel() {
                 </div>
               </div>
 
-              <div className="hidden medium:flex justify-center items-center">
-                <div className="relative w-72 h-72 large:w-96 large:h-96 rounded-full bg-brand-surface/50 backdrop-blur border border-brand-border flex items-center justify-center">
-                  <span className="text-[10rem] large:text-[14rem] opacity-90" aria-hidden="true">
-                    {s.emoji}
-                  </span>
-                  <div className="absolute inset-0 rounded-full border border-brand-primary/30 animate-ping" aria-hidden="true" />
-                </div>
+              {/* ── Coluna direita: grid de features ── */}
+              <div className="hidden medium:grid grid-cols-2 gap-3 w-full max-w-sm ml-auto">
+                {s.features.map((f) => (
+                  <div
+                    key={f.label}
+                    className="bg-white/5 hover:bg-white/8 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 transition-colors backdrop-blur-sm"
+                  >
+                    <span className="text-3xl" aria-hidden="true">{f.icon}</span>
+                    <p className="text-white font-semibold text-sm leading-tight">{f.label}</p>
+                    <p className="text-white/50 text-xs">{f.sub}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         ))}
 
-        {/* Dots */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        {/* Dots de navegação */}
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 z-10">
           {SLIDES.map((_, i) => (
             <button
               key={i}
               onClick={() => setActive(i)}
               aria-label={`Ir para slide ${i + 1}`}
-              className={`h-2 rounded-full transition-all ${
+              className={`h-1.5 rounded-full transition-all ${
                 i === active
-                  ? "w-8 bg-brand-primary"
-                  : "w-2 bg-brand-border hover:bg-brand-muted"
+                  ? "w-8 bg-blue-400"
+                  : "w-2 bg-white/25 hover:bg-white/50"
               }`}
             />
           ))}
