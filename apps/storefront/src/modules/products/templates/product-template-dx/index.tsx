@@ -26,16 +26,17 @@ type Props = {
 }
 
 /**
- * Template DX da página de produto v2.2 (KaBuM sticky layout).
+ * Template DX da página de produto v2.3 (KaBuM sticky layout).
  *
  * Grid 12-col com 2 linhas implícitas:
  *   Row 1 ┌──────────────────┬─────────┬──────────┐
- *         │ Gallery  (6/12)  │Info(3/12)│Buy (3/12)│  ← buy box coluna sticky
- *   Row 2 ├──────────────────────────────┤         │
- *         │ Tabs + Bundle   (9/12)       │ (vazio) │  ← buy box continua sticky
- *         └──────────────────────────────┴─────────┘
+ *         │ Gallery  (6/12)  │Info(3/12)│Buy (3/12)│  ← buy box coluna sticky (top-2)
+ *   Row 2 ├────────────────────────────┤  (vazio) │
+ *         │ Tabs+Reviews+Garantia(9/12)│          │  ← buy box acompanha tudo
+ *         └────────────────────────────┴──────────┘
  *
- * Fora do grid: reviews, garantia, relacionados → sticky para aqui.
+ * Fora do grid: apenas RelatedProducts → sticky para quando chegar aqui.
+ * top-2 (8px): header não é sticky, colado no topo do viewport sem gap.
  * Mobile: empilha na ordem galeria → info → buy box → tabs.
  */
 export default function ProductTemplateDX({
@@ -83,7 +84,7 @@ export default function ProductTemplateDX({
 
         {/* ── Coluna 2: Info (3/12) — inner sticky p/ título ficar visível ── */}
         <div className="large:col-span-3 min-w-0">
-          <div className="flex flex-col gap-4 large:sticky large:top-24">
+          <div className="flex flex-col gap-4 large:sticky large:top-2">
             <div className="flex items-center justify-between gap-3 flex-wrap">
               {product.collection?.title ? (
                 <span className="text-brand-cyan text-[10px] uppercase tracking-[0.2em] font-bold">
@@ -127,11 +128,12 @@ export default function ProductTemplateDX({
          * ── Coluna 3: Buy Box (3/12) — A COLUNA INTEIRA É STICKY ──
          *
          * h-fit: impede que a coluna estique para preencher a linha do grid,
-         * permitindo que o sticky funcione pelo comprimento total do grid
-         * (incluindo a row 2 com as tabs de 9 colunas abaixo).
+         * permitindo que o sticky funcione pelo comprimento total do grid.
+         * top-2: header não é sticky → quando rola, buy box fica colado no
+         * topo do viewport sem espaço em branco acima.
          * z-10 garante que fique na frente do conteúdo da row 2 ao colidir.
          */}
-        <div className="large:col-span-3 min-w-0 h-fit large:sticky large:top-24 large:z-10">
+        <div className="large:col-span-3 min-w-0 h-fit large:sticky large:top-2 large:z-10">
           <Suspense
             fallback={
               <BuyBox
@@ -152,15 +154,16 @@ export default function ProductTemplateDX({
         </div>
 
         {/*
-         * ── Row 2: Tabs + Bundle (9/12) ──
+         * ── Row 2: Tabs + Bundle + Reviews + Garantia (9/12) ──
          *
          * Ocupa as 9 colunas da esquerda, deixando as 3 da direita livres.
-         * O buy box sticky "ocupa" visualmente essas 3 colunas enquanto o
-         * usuário scrola por este conteúdo.
+         * O buy box sticky acompanha TODO este conteúdo (tabs, reviews,
+         * garantia). O sticky só para quando o grid termina — antes dos
+         * produtos relacionados (que ficam fora do grid).
          */}
         <div
           id="produto-detalhes"
-          className="large:col-span-9 min-w-0 flex flex-col gap-8 scroll-mt-24"
+          className="large:col-span-9 min-w-0 flex flex-col gap-8 scroll-mt-2"
         >
           <BundleSection
             product={
@@ -180,26 +183,19 @@ export default function ProductTemplateDX({
 
           <ProductTabsDX product={product} />
           <VehicleCompatibility productId={product.id} />
+
+          <section id="avaliacoes" className="scroll-mt-2">
+            <h2 className="text-[20px] small:text-[24px] font-extrabold text-brand-text mb-5">
+              Avaliações dos clientes
+            </h2>
+            <div className="bg-brand-surface border border-brand-border rounded-xl p-5 small:p-7">
+              <ProductReviews productId={product.id} />
+            </div>
+          </section>
+
+          <GuaranteeHighlight />
         </div>
       </section>
-
-      {/* ── Fora do grid: sticky para aqui ── */}
-
-      <section
-        id="avaliacoes"
-        className="content-container scroll-mt-24 py-3"
-      >
-        <h2 className="text-[20px] small:text-[24px] font-extrabold text-brand-text mb-5">
-          Avaliações dos clientes
-        </h2>
-        <div className="bg-brand-surface border border-brand-border rounded-xl p-5 small:p-7">
-          <ProductReviews productId={product.id} />
-        </div>
-      </section>
-
-      <div className="py-3">
-        <GuaranteeHighlight />
-      </div>
 
       <Suspense
         fallback={
