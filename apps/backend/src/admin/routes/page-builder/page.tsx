@@ -24,6 +24,7 @@ type SettingType =
   | "collection_picker"
   | "category_picker"
   | "select"
+  | "block_array"
 
 type SettingDef = {
   key: string
@@ -34,7 +35,12 @@ type SettingDef = {
   options?: Array<{ value: string; label: string }>
   min?: number
   max?: number
+  itemSchema?: { fields: SettingDef[] }
+  minItems?: number
+  maxItems?: number
 }
+
+type BlockItem = Record<string, unknown> & { id: string }
 
 type Manifest = {
   type: string
@@ -67,6 +73,12 @@ const generateId = () => {
   const ts = Date.now().toString(36)
   const rnd = Math.random().toString(36).slice(2, 6)
   return `sec_${ts}_${rnd}`
+}
+
+const generateBlockId = () => {
+  const ts = Date.now().toString(36)
+  const rnd = Math.random().toString(36).slice(2, 4)
+  return `blk_${ts}_${rnd}`
 }
 
 const PageBuilder = () => {
@@ -676,6 +688,110 @@ const SettingField = ({
           </Select>
         </div>
       )
+    case "block_array": {
+      const items = Array.isArray(value) ? (value as BlockItem[]) : []
+      const schema = def.itemSchema
+      const canAdd = !def.maxItems || items.length < def.maxItems
+
+      const addItem = () => {
+        const newItem: BlockItem = { id: generateBlockId() }
+        for (const f of schema?.fields ?? []) {
+          if (f.default !== undefined) newItem[f.key] = f.default
+        }
+        onChange([...items, newItem])
+      }
+
+      const removeItem = (idx: number) => {
+        onChange(items.filter((_, i) => i !== idx))
+      }
+
+      const moveItem = (idx: number, dir: "up" | "down") => {
+        const arr = [...items]
+        const to = dir === "up" ? idx - 1 : idx + 1
+        if (to < 0 || to >= arr.length) return
+        ;[arr[idx], arr[to]] = [arr[to], arr[idx]]
+        onChange(arr)
+      }
+
+      const updateField = (idx: number, key: string, val: unknown) => {
+        onChange(items.map((item, i) => (i === idx ? { ...item, [key]: val } : item)))
+      }
+
+      return (
+        <div>
+          {baseLabel}
+          <div className="mt-2 space-y-3">
+            {items.length === 0 && (
+              <Text size="xsmall" className="text-ui-fg-muted italic">
+                Nenhum item. Clique em "+ Adicionar" para começar.
+              </Text>
+            )}
+            {items.map((item, idx) => (
+              <div
+                key={(item.id as string) || idx}
+                className="border border-ui-border-base rounded-md p-3 bg-ui-bg-subtle"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <Text weight="plus" size="xsmall">
+                    Item {idx + 1}
+                  </Text>
+                  <div className="flex gap-1 items-center">
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={() => moveItem(idx, "up")}
+                      className="text-ui-fg-subtle hover:text-ui-fg-base disabled:opacity-30 text-xs px-1"
+                      title="Mover para cima"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      disabled={idx === items.length - 1}
+                      onClick={() => moveItem(idx, "down")}
+                      className="text-ui-fg-subtle hover:text-ui-fg-base disabled:opacity-30 text-xs px-1"
+                      title="Mover para baixo"
+                    >
+                      ▼
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(idx)}
+                      className="text-ui-fg-muted hover:text-rose-500 text-xs px-1 ml-1"
+                      title="Remover item"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-3">
+                  {(schema?.fields ?? []).map((fieldDef) => (
+                    <SettingField
+                      key={fieldDef.key}
+                      def={fieldDef}
+                      value={item[fieldDef.key]}
+                      onChange={(v) => updateField(idx, fieldDef.key, v)}
+                      collections={collections}
+                      categories={categories}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+            {canAdd && (
+              <Button
+                variant="secondary"
+                size="xsmall"
+                type="button"
+                onClick={addItem}
+              >
+                + Adicionar
+              </Button>
+            )}
+          </div>
+        </div>
+      )
+    }
     default:
       return (
         <div>
@@ -690,13 +806,18 @@ const SettingField = ({
 
 const summarize = (sec: SectionInstance, manifest?: Manifest) => {
   if (!manifest) return ""
-  // Pega o primeiro setting "text/textarea" pra preview
   const titleSetting = manifest.settings.find(
     (s) => (s.type === "text" || s.type === "textarea") && sec.settings[s.key]
   )
   if (titleSetting) {
     const v = sec.settings[titleSetting.key] as string
     return v.length > 60 ? v.slice(0, 60) + "…" : v
+  }
+  const blockSetting = manifest.settings.find((s) => s.type === "block_array")
+  if (blockSetting) {
+    const arr = sec.settings[blockSetting.key]
+    const count = Array.isArray(arr) ? arr.length : 0
+    return count > 0 ? `${count} ${count === 1 ? "item" : "itens"} configurados` : "Sem itens (usa padrão)"
   }
   return manifest.description
 }

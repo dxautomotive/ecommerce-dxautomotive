@@ -33,7 +33,7 @@ export const SECTION_MANIFESTS: SectionManifest[] = [
     label: "Vitrine de categorias",
     icon: "🗂️",
     description:
-      "Grid de cards das 4 categorias principais com gradients.",
+      "Círculos de categorias configuráveis — selecione, reordene e personalize cada item.",
     settings: [
       {
         key: "eyebrow",
@@ -53,6 +53,59 @@ export const SECTION_MANIFESTS: SectionManifest[] = [
         label: "Descrição curta",
         default:
           "Equipamentos selecionados para os principais modelos do mercado brasileiro. Compatibilidade verificada por veículo.",
+      },
+      {
+        key: "blocks",
+        type: "block_array",
+        label: "Categorias exibidas",
+        hint: "Adicione e reordene as categorias que aparecem nos círculos. Vazio = usa as 4 categorias padrão.",
+        default: [],
+        maxItems: 8,
+        itemSchema: {
+          fields: [
+            {
+              key: "category_handle",
+              type: "category_picker",
+              label: "Categoria",
+            },
+            {
+              key: "emoji",
+              type: "text",
+              label: "Emoji",
+              default: "📦",
+              hint: "Um emoji representativo (ex: 🚗, 📷, 🛞)",
+            },
+            {
+              key: "gradient",
+              type: "select",
+              label: "Cor do círculo",
+              default: "from-blue-500 to-blue-800",
+              options: [
+                { value: "from-blue-500 to-blue-800", label: "Azul" },
+                { value: "from-purple-500 to-indigo-700", label: "Roxo" },
+                { value: "from-emerald-500 to-teal-700", label: "Verde" },
+                { value: "from-amber-400 to-orange-600", label: "Laranja" },
+                { value: "from-rose-500 to-pink-700", label: "Rosa" },
+                { value: "from-cyan-500 to-sky-700", label: "Ciano" },
+                { value: "from-slate-600 to-slate-800", label: "Cinza" },
+              ],
+            },
+            {
+              key: "pitch",
+              type: "text",
+              label: "Subtítulo",
+              hint: "Texto abaixo do nome (ex: Android Auto, CarPlay e GPS)",
+              default: "",
+            },
+            {
+              key: "custom_link",
+              type: "url",
+              label: "Link personalizado (opcional)",
+              hint: "Vazio = link automático para a categoria selecionada",
+              default: "",
+            },
+          ],
+        },
       },
     ],
   },

@@ -2,7 +2,7 @@ import { listFeaturedCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import FeaturedCollection from "@modules/collections/components/featured-collection"
 import BenefitsBar from "@modules/home/components/benefits-bar"
-import CategoryShowcase from "@modules/home/components/category-showcase"
+import CategoryShowcase, { type CategoryBlock } from "@modules/home/components/category-showcase"
 import FeaturedProductsDX from "@modules/home/components/featured-products-dx"
 import FlashSaleBanner from "@modules/home/components/flash-sale-banner"
 import HeroCarousel from "@modules/home/components/hero-carousel"
@@ -37,16 +37,23 @@ export const SECTION_MAP: Record<string, SectionRenderer> = {
 
   "benefits-bar": () => <BenefitsBar />,
 
-  "category-showcase": (sec) => (
-    <CategoryShowcase
-      eyebrow={str(sec.settings.eyebrow, "Para o seu carro")}
-      title={str(sec.settings.title, "Encontre o que precisa")}
-      description={str(
-        sec.settings.description,
-        "Equipamentos selecionados para os principais modelos do mercado brasileiro. Compatibilidade verificada por veículo."
-      )}
-    />
-  ),
+  "category-showcase": (sec) => {
+    const rawBlocks = sec.settings.blocks
+    const blocks = Array.isArray(rawBlocks)
+      ? (rawBlocks as CategoryBlock[])
+      : undefined
+    return (
+      <CategoryShowcase
+        eyebrow={str(sec.settings.eyebrow, "Para o seu carro")}
+        title={str(sec.settings.title, "Encontre o que precisa")}
+        description={str(
+          sec.settings.description,
+          "Equipamentos selecionados para os principais modelos do mercado brasileiro. Compatibilidade verificada por veículo."
+        )}
+        blocks={blocks}
+      />
+    )
+  },
 
   "flash-sale-banner": (sec) => (
     <FlashSaleBanner

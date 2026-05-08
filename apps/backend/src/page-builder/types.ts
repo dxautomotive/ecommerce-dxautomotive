@@ -23,6 +23,7 @@ export type SettingType =
   | "collection_picker"
   | "category_picker"
   | "select"
+  | "block_array"
 
 export type SettingDef = {
   key: string
@@ -35,6 +36,10 @@ export type SettingDef = {
   /** Para `number` */
   min?: number
   max?: number
+  /** Para `block_array` — schema dos campos de cada item */
+  itemSchema?: { fields: SettingDef[] }
+  minItems?: number
+  maxItems?: number
 }
 
 export type SectionManifest = {
