@@ -26,20 +26,17 @@ type Props = {
 }
 
 /**
- * Template DX da página de produto v2.1 (KaBuM 3 colunas).
+ * Template DX da página de produto v2.2 (KaBuM sticky layout).
  *
- * Proporção espelha a KaBuM real: grid 12-col com gap 32px.
- *   ┌─────────────────┬──────────┬──────────┐
- *   │ Galeria (6/12)  │ Info 3/12│ Buy 3/12 │
- *   │ 50%             │ 25%      │ 25%      │
- *   │                 │ (titulo, │ (sticky) │
- *   │                 │  ai,     │          │
- *   │                 │  tabs)   │          │
- *   └─────────────────┴──────────┴──────────┘
+ * Grid 12-col com 2 linhas implícitas:
+ *   Row 1 ┌──────────────────┬─────────┬──────────┐
+ *         │ Gallery  (6/12)  │Info(3/12)│Buy (3/12)│  ← buy box coluna sticky
+ *   Row 2 ├──────────────────────────────┤         │
+ *         │ Tabs + Bundle   (9/12)       │ (vazio) │  ← buy box continua sticky
+ *         └──────────────────────────────┴─────────┘
  *
- * Abaixo do grid: TrustSignals 4-col (full width) + Garantia + RelatedProducts.
- *
- * Mobile/medium: stack — ordem galeria → info → buy box.
+ * Fora do grid: reviews, garantia, relacionados → sticky para aqui.
+ * Mobile: empilha na ordem galeria → info → buy box → tabs.
  */
 export default function ProductTemplateDX({
   product,
@@ -55,9 +52,6 @@ export default function ProductTemplateDX({
   const sku = product.variants?.[0]?.sku
   const aiSummaryItems = extractAiSummary(meta, product)
 
-  // Mapa variantId → imageId vindo de `variant.metadata.image_id` (curado no
-  // admin via VariantImagesPicker). A galeria escuta `dx:variant-changed`
-  // e ativa a imagem associada quando o cliente troca a opção.
   const variantImageMap: Record<string, string> = {}
   for (const v of product.variants ?? []) {
     const imgId = (v.metadata as { image_id?: unknown } | null | undefined)
@@ -69,10 +63,15 @@ export default function ProductTemplateDX({
     <>
       <Breadcrumb product={product} />
 
+      {/*
+       * Grid principal — row 1 (galeria + info + buy box) + row 2 (tabs 9-col).
+       * O buy box fica sticky pela altura total do grid, parando antes das reviews.
+       */}
       <section
         className="content-container grid grid-cols-1 large:grid-cols-12 gap-6 large:gap-8 pt-2 pb-3"
         data-testid="product-container"
       >
+        {/* ── Coluna 1: Galeria (6/12) ── */}
         <div className="large:col-span-6 min-w-0">
           <ProductGalleryDX
             images={images}
@@ -82,93 +81,109 @@ export default function ProductTemplateDX({
           />
         </div>
 
-        <div className="large:col-span-3 flex flex-col gap-4 min-w-0">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            {product.collection?.title ? (
-              <span className="text-brand-cyan text-[10px] uppercase tracking-[0.2em] font-bold">
-                {product.collection.title}
-              </span>
-            ) : (
-              <span aria-hidden="true" />
-            )}
-            <ProductHeaderActions
-              productId={product.id}
-              productTitle={product.title || ""}
-            />
+        {/* ── Coluna 2: Info (3/12) — inner sticky p/ título ficar visível ── */}
+        <div className="large:col-span-3 min-w-0">
+          <div className="flex flex-col gap-4 large:sticky large:top-24">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              {product.collection?.title ? (
+                <span className="text-brand-cyan text-[10px] uppercase tracking-[0.2em] font-bold">
+                  {product.collection.title}
+                </span>
+              ) : (
+                <span aria-hidden="true" />
+              )}
+              <ProductHeaderActions
+                productId={product.id}
+                productTitle={product.title || ""}
+              />
+            </div>
+
+            <div>
+              <h1 className="text-[20px] leading-[28px] font-bold text-brand-text">
+                {product.title}
+              </h1>
+              {product.subtitle && (
+                <p className="text-brand-text-2 text-[13px] mt-2">
+                  {product.subtitle}
+                </p>
+              )}
+              {sku && (
+                <p className="text-brand-text-3 text-[11px] mt-2 uppercase tracking-wider">
+                  SKU:{" "}
+                  <span className="text-brand-text-2 font-mono">{sku}</span>
+                </p>
+              )}
+            </div>
+
+            <CompatibilityBadge metadata={meta as any} />
+
+            {aiSummaryItems.length > 0 && <AiSummary items={aiSummaryItems} />}
+
+            <CompatibilityChecker productId={product.id} />
           </div>
-
-          <div>
-            <h1 className="text-[20px] leading-[28px] font-bold text-brand-text">
-              {product.title}
-            </h1>
-            {product.subtitle && (
-              <p className="text-brand-text-2 text-[13px] mt-2">
-                {product.subtitle}
-              </p>
-            )}
-            {sku && (
-              <p className="text-brand-text-3 text-[11px] mt-2 uppercase tracking-wider">
-                SKU:{" "}
-                <span className="text-brand-text-2 font-mono">{sku}</span>
-              </p>
-            )}
-          </div>
-
-          <CompatibilityBadge metadata={meta as any} />
-
-          {aiSummaryItems.length > 0 && <AiSummary items={aiSummaryItems} />}
-
-          <CompatibilityChecker productId={product.id} />
         </div>
 
-        <div className="large:col-span-3 min-w-0">
-          <div className="large:sticky large:top-24">
-            <Suspense
-              fallback={
-                <BuyBox
-                  product={product}
-                  region={region}
-                  actionsSlot={null}
-                />
-              }
-            >
+        {/*
+         * ── Coluna 3: Buy Box (3/12) — A COLUNA INTEIRA É STICKY ──
+         *
+         * h-fit: impede que a coluna estique para preencher a linha do grid,
+         * permitindo que o sticky funcione pelo comprimento total do grid
+         * (incluindo a row 2 com as tabs de 9 colunas abaixo).
+         * z-10 garante que fique na frente do conteúdo da row 2 ao colidir.
+         */}
+        <div className="large:col-span-3 min-w-0 h-fit large:sticky large:top-24 large:z-10">
+          <Suspense
+            fallback={
               <BuyBox
                 product={product}
                 region={region}
-                actionsSlot={
-                  <ProductActionsWrapper id={product.id} region={region} />
-                }
+                actionsSlot={null}
               />
-            </Suspense>
-          </div>
+            }
+          >
+            <BuyBox
+              product={product}
+              region={region}
+              actionsSlot={
+                <ProductActionsWrapper id={product.id} region={region} />
+              }
+            />
+          </Suspense>
+        </div>
+
+        {/*
+         * ── Row 2: Tabs + Bundle (9/12) ──
+         *
+         * Ocupa as 9 colunas da esquerda, deixando as 3 da direita livres.
+         * O buy box sticky "ocupa" visualmente essas 3 colunas enquanto o
+         * usuário scrola por este conteúdo.
+         */}
+        <div
+          id="produto-detalhes"
+          className="large:col-span-9 min-w-0 flex flex-col gap-8 scroll-mt-24"
+        >
+          <BundleSection
+            product={
+              {
+                id: product.id,
+                title: product.title || "",
+                thumbnail: product.thumbnail ?? null,
+                handle: product.handle || "",
+                variants: (product.variants ?? []).map((v) => ({
+                  id: v.id,
+                  calculated_price: (v as any).calculated_price,
+                })),
+              } as any
+            }
+            currencyCode={region.currency_code}
+          />
+
+          <ProductTabsDX product={product} />
+          <VehicleCompatibility productId={product.id} />
         </div>
       </section>
 
-      <section className="content-container py-3">
-        <BundleSection
-          product={
-            {
-              id: product.id,
-              title: product.title || "",
-              thumbnail: product.thumbnail ?? null,
-              handle: product.handle || "",
-              variants: (product.variants ?? []).map((v) => ({
-                id: v.id,
-                calculated_price: (v as any).calculated_price,
-              })),
-            } as any
-          }
-          currencyCode={region.currency_code}
-        />
-      </section>
-
-      <section
-        id="produto-detalhes"
-        className="content-container scroll-mt-24 py-3 flex flex-col gap-8"
-      >
-        <ProductTabsDX product={product} />
-        <VehicleCompatibility productId={product.id} />
-      </section>
+      {/* ── Fora do grid: sticky para aqui ── */}
 
       <section
         id="avaliacoes"
@@ -186,9 +201,6 @@ export default function ProductTemplateDX({
         <GuaranteeHighlight />
       </div>
 
-      {/* RelatedProducts renderiza a própria section com padding.
-          Quando não há produtos (mesma coleção/tags), retorna null e o
-          footer cola direto após a Garantia. */}
       <Suspense
         fallback={
           <div className="content-container py-3">
@@ -202,12 +214,6 @@ export default function ProductTemplateDX({
   )
 }
 
-/**
- * Extrai bullets pro AiSummary. Prioridade:
- *   1. metadata.ai_summary (array de strings ou string com `\n`)
- *   2. metadata.highlights (array)
- *   3. fallback: extrai 2-3 frases curtas da descrição (heurística simples)
- */
 function extractAiSummary(
   meta: Record<string, unknown>,
   product: HttpTypes.StoreProduct
