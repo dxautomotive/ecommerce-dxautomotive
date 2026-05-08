@@ -105,6 +105,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Preview pages handle their own country code via searchParams — bypass middleware
+  if (request.nextUrl.pathname.startsWith("/preview/")) {
+    return NextResponse.next()
+  }
+
   const cacheIdCookie = request.cookies.get("_medusa_cache_id")
   const cacheId = cacheIdCookie?.value || crypto.randomUUID()
 
