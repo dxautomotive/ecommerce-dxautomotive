@@ -19,14 +19,17 @@ import type { PageTemplate } from "@modules/page-builder/types"
  * builtin (replica o layout original hardcoded da home).
  */
 export const getPageTemplate = async (
-  templateName: "home"
+  templateName: "home",
+  opts?: { draft?: boolean }
 ): Promise<PageTemplate | null> => {
+  const qs = opts?.draft ? "?draft=1" : ""
+  const fetchOpts = opts?.draft
+    ? { cache: "no-store" as const }
+    : { next: { revalidate: 10, tags: ["page-templates"] } }
   return await sdk.client
     .fetch<{ template: PageTemplate }>(
-      `/store/page-builder/${templateName}`,
-      {
-        next: { revalidate: 10, tags: ["page-templates"] },
-      }
+      `/store/page-builder/${templateName}${qs}`,
+      fetchOpts
     )
     .then(({ template }) => template ?? null)
     .catch(() => null)

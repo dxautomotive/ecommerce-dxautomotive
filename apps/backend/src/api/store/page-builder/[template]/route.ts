@@ -29,7 +29,12 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const store = stores[0]
 
   const meta = (store?.metadata ?? {}) as Record<string, unknown>
-  const saved = meta[`page_template_${tpl}`] as PageTemplate | undefined
+  const isDraft = req.query?.draft === "1"
+  const draftSaved = isDraft
+    ? (meta[`page_template_${tpl}_draft`] as PageTemplate | undefined)
+    : undefined
+  const liveSaved = meta[`page_template_${tpl}`] as PageTemplate | undefined
+  const saved = draftSaved ?? liveSaved
 
   const template: PageTemplate = saved ?? buildDefaultHomeTemplate()
 
