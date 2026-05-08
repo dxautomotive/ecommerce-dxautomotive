@@ -3,7 +3,7 @@ import { Metadata } from "next"
 import { getRegion } from "@lib/data/regions"
 import DynamicHomepage from "@modules/page-builder/components/dynamic-homepage"
 
-export const revalidate = 3600
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: "DX Automotive — Tecnologia que transforma seu carro",
