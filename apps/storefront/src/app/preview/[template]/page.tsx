@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { getRegion } from "@lib/data/regions"
-import { getPageTemplate } from "@lib/data/page-builder"
+import { getPageTemplateDraft } from "@lib/data/page-builder-draft"
 import { SECTION_MAP } from "@modules/page-builder/section-map"
 import PreviewRefreshListener from "./preview-refresh-listener"
 
@@ -22,8 +22,8 @@ export default async function PreviewPage({ params, searchParams }: Props) {
   }
 
   const [template, region] = await Promise.all([
-    getPageTemplate(templateName as "home", { draft: true }),
-    getRegion(countryCode),
+    getPageTemplateDraft(templateName as "home"),
+    getRegion(countryCode).catch(() => null),
   ])
 
   if (!template || !region) return null
