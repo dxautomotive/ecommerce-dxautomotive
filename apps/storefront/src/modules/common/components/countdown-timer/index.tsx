@@ -101,7 +101,8 @@ export default function CountdownTimer({
     <div
       className={`flex flex-col items-center justify-center rounded border ${sizes.box} ${palette.box} font-mono`}
     >
-      <span className={`${sizes.num} font-extrabold tabular-nums leading-none`}>
+      {/* suppressHydrationWarning: server/client diff de 1s é esperado em timers */}
+      <span suppressHydrationWarning className={`${sizes.num} font-extrabold tabular-nums leading-none`}>
         {value.toString().padStart(2, "0")}
       </span>
       <span className={`${sizes.label} ${palette.boxLabel} uppercase tracking-wider mt-0.5`}>
