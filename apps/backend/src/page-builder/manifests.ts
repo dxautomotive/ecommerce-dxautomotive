@@ -236,6 +236,34 @@ export const SECTION_MANIFESTS: SectionManifest[] = [
     description: "Carrossel de depoimentos de clientes.",
     settings: [],
   },
+  {
+    type: "why-dx-section",
+    label: "Por que a DX?",
+    icon: "🛡️",
+    description:
+      "4 pilares de confiança com visual dark premium (garantia, Pix, frete, plug & play).",
+    settings: [
+      {
+        key: "eyebrow",
+        type: "text",
+        label: "Eyebrow",
+        default: "Por que a DX Automotive?",
+      },
+      {
+        key: "title",
+        type: "text",
+        label: "Título",
+        default: "Tecnologia automotiva sem complicação",
+      },
+      {
+        key: "description",
+        type: "textarea",
+        label: "Descrição",
+        default:
+          "Mais de 200 modelos compatíveis, suporte humano no WhatsApp e entrega rápida para qualquer estado do Brasil.",
+      },
+    ],
+  },
 ]
 
 export function findManifest(type: string): SectionManifest | undefined {

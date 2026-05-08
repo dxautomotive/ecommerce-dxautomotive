@@ -8,6 +8,7 @@ import FlashSaleBanner from "@modules/home/components/flash-sale-banner"
 import HeroCarousel from "@modules/home/components/hero-carousel"
 import PromotionBlocks from "@modules/home/components/promotion-blocks"
 import Testimonials from "@modules/home/components/testimonials"
+import WhyDXSection from "@modules/home/components/why-dx-section"
 import type { SectionInstance } from "./types"
 
 type Ctx = {
@@ -106,4 +107,12 @@ export const SECTION_MAP: Record<string, SectionRenderer> = {
   "promotion-blocks": () => <PromotionBlocks />,
 
   testimonials: () => <Testimonials />,
+
+  "why-dx-section": (sec) => (
+    <WhyDXSection
+      eyebrow={str(sec.settings.eyebrow) || undefined}
+      title={str(sec.settings.title) || undefined}
+      description={str(sec.settings.description) || undefined}
+    />
+  ),
 }
