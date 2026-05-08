@@ -10,6 +10,8 @@ type Props = {
   searchParams: Promise<{ v_id?: string }>
 }
 
+export const revalidate = 3600
+
 export async function generateStaticParams() {
   try {
     const countryCodes = await listRegions().then((regions) =>
