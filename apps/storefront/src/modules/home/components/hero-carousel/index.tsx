@@ -12,7 +12,6 @@ type Slide = {
   description: string
   primaryCta: { label: string; href: string }
   secondaryCta?: { label: string; href: string }
-  /** gradient de cor aplicado sobre o fundo dark */
   accentGradient: string
   features: Feature[]
 }
@@ -83,7 +82,7 @@ export default function HeroCarousel() {
       aria-label="Banner principal"
       className="relative w-full overflow-hidden bg-slate-900"
     >
-      <div className="relative min-h-[58vh] small:min-h-[65vh]">
+      <div className="relative min-h-[62vh] small:min-h-[68vh]">
         {SLIDES.map((s, i) => (
           <div
             key={s.title}
@@ -109,54 +108,63 @@ export default function HeroCarousel() {
               aria-hidden="true"
             />
 
-            <div className="relative content-container h-full min-h-[58vh] small:min-h-[65vh] grid grid-cols-1 medium:grid-cols-2 items-center gap-8 py-14 small:py-20">
+            {/*
+             * Layout Sabino Vision: coluna única centralizada.
+             * Conteúdo em max-w limitado, nunca espreme em notebooks.
+             * Cards de features em strip horizontal abaixo dos CTAs.
+             */}
+            <div className="relative content-container min-h-[62vh] small:min-h-[68vh] flex flex-col justify-center items-center text-center gap-4 py-14 small:py-20">
 
-              {/* ── Coluna de texto ── */}
-              <div className="flex flex-col gap-5 max-w-2xl">
-                {s.eyebrow && (
-                  <span className="text-blue-400 text-xs uppercase tracking-[0.25em] font-semibold">
-                    {s.eyebrow}
-                  </span>
+              {/* Eyebrow */}
+              {s.eyebrow && (
+                <span className="text-blue-400 text-xs uppercase tracking-[0.25em] font-semibold">
+                  {s.eyebrow}
+                </span>
+              )}
+
+              {/* Título — max-w-[680px] igual ao padrão Sabino (650px) */}
+              <h1 className="text-4xl small:text-5xl large:text-6xl leading-[1.05] text-white font-extrabold max-w-[680px]">
+                {s.title}
+                {s.highlight && (
+                  <>
+                    {" "}
+                    <span className="text-blue-400">{s.highlight}</span>
+                  </>
                 )}
-                <h1 className="text-4xl small:text-5xl medium:text-6xl leading-[1.05] text-white font-extrabold">
-                  {s.title}
-                  {s.highlight && (
-                    <>
-                      {" "}
-                      <span className="text-blue-400">{s.highlight}</span>
-                    </>
-                  )}
-                </h1>
-                <p className="text-white/65 text-base small:text-lg leading-relaxed">
-                  {s.description}
-                </p>
-                <div className="flex flex-wrap gap-3 mt-2">
+              </h1>
+
+              {/* Descrição — mais estreita que o título */}
+              <p className="text-white/65 text-base small:text-lg leading-relaxed max-w-xl">
+                {s.description}
+              </p>
+
+              {/* CTAs */}
+              <div className="flex flex-wrap gap-3 justify-center mt-1">
+                <LocalizedClientLink
+                  href={s.primaryCta.href}
+                  className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-semibold px-6 py-3 rounded-md shadow-lg shadow-blue-500/25 transition-colors"
+                >
+                  {s.primaryCta.label}
+                  <span aria-hidden="true">→</span>
+                </LocalizedClientLink>
+                {s.secondaryCta && (
                   <LocalizedClientLink
-                    href={s.primaryCta.href}
-                    className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white font-semibold px-6 py-3 rounded-md shadow-lg shadow-blue-500/25 transition-colors"
+                    href={s.secondaryCta.href}
+                    className="inline-flex items-center border border-white/25 hover:border-white/60 text-white/80 hover:text-white font-semibold px-6 py-3 rounded-md transition-colors"
                   >
-                    {s.primaryCta.label}
-                    <span aria-hidden="true">→</span>
+                    {s.secondaryCta.label}
                   </LocalizedClientLink>
-                  {s.secondaryCta && (
-                    <LocalizedClientLink
-                      href={s.secondaryCta.href}
-                      className="inline-flex items-center border border-white/25 hover:border-white/60 text-white/80 hover:text-white font-semibold px-6 py-3 rounded-md transition-colors"
-                    >
-                      {s.secondaryCta.label}
-                    </LocalizedClientLink>
-                  )}
-                </div>
+                )}
               </div>
 
-              {/* ── Coluna direita: grid de features ── */}
-              <div className="hidden medium:grid grid-cols-2 gap-3 w-full max-w-sm ml-auto">
+              {/* Feature strip — 4 cards em linha, padrão Sabino abaixo dos CTAs */}
+              <div className="grid grid-cols-2 small:grid-cols-4 gap-3 w-full max-w-[680px] mt-5">
                 {s.features.map((f) => (
                   <div
                     key={f.label}
-                    className="bg-white/5 hover:bg-white/8 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 transition-colors backdrop-blur-sm"
+                    className="bg-white/5 hover:bg-white/8 border border-white/10 rounded-2xl p-4 flex flex-col gap-1.5 transition-colors backdrop-blur-sm text-left"
                   >
-                    <span className="text-3xl" aria-hidden="true">{f.icon}</span>
+                    <span className="text-2xl" aria-hidden="true">{f.icon}</span>
                     <p className="text-white font-semibold text-sm leading-tight">{f.label}</p>
                     <p className="text-white/50 text-xs">{f.sub}</p>
                   </div>
