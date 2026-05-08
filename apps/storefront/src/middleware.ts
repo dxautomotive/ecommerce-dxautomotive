@@ -127,13 +127,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // if the url doesn't have the country, redirect to it
-  const redirectPath =
-    request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname
-  const queryString = request.nextUrl.search || ""
-  const redirectUrl = `${request.nextUrl.origin}/${country}${redirectPath}${queryString}`
+  // URL sem countryCode: rewrite (transparente, URL no browser fica limpa).
+  // A vista do user é `dxautomotive.com.br/produtos/x`, internamente o Next
+  // serve `/br/produtos/x`. Mantemos o /br no path interno pra preservar a
+  // estrutura `[countryCode]/(main)/...` do app router.
+  const internalUrl = request.nextUrl.clone()
+  internalUrl.pathname = `/${country}${request.nextUrl.pathname === "/" ? "" : request.nextUrl.pathname}`
 
-  return NextResponse.redirect(redirectUrl, 307)
+  const response = NextResponse.rewrite(internalUrl)
+  if (!cacheIdCookie) {
+    response.cookies.set("_medusa_cache_id", cacheId, {
+      maxAge: 60 * 60 * 24,
+    })
+  }
+  return response
 }
 
 export const config = {

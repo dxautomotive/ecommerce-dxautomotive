@@ -13,6 +13,13 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     },
   },
+  admin: {
+    // Serve o admin UI direto na raiz do dominio (app.dxautomotive.com.br/login),
+    // sem o prefixo /app default. APIs REST `/admin/*`, `/store/*`, `/auth/*`,
+    // `/health` continuam funcionando porque o framework prioriza as rotas
+    // registradas antes do fallback do admin UI.
+    path: "/",
+  },
   modules: [
     {
       resolve: "./src/modules/atacado_leads",
