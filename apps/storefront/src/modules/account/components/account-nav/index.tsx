@@ -3,7 +3,7 @@
 import { signout } from "@lib/data/customer"
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import { useParams, usePathname } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 const NAV_ITEMS = [
   { href: "/account", label: "Visão geral", icon: "home" },
@@ -18,16 +18,12 @@ const AccountNav = ({
   customer: HttpTypes.StoreCustomer | null
 }) => {
   const route = usePathname()
-  const { countryCode } = useParams() as { countryCode: string }
 
   const handleLogout = async () => {
-    await signout(countryCode)
+    await signout()
   }
 
-  const isActive = (href: string) => {
-    const stripped = route.split(countryCode)[1] || "/"
-    return stripped === href
-  }
+  const isActive = (href: string) => route === href
 
   return (
     <aside data-testid="account-nav" className="medium:sticky medium:top-32">

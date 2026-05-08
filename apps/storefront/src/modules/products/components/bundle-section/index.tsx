@@ -121,7 +121,7 @@ export default function BundleSection({ product, currencyCode }: Props) {
         if (!variantId) continue
         await addToCart({ variantId, quantity: 1, countryCode })
       }
-      router.push(`/${countryCode}/cart`)
+      router.push(`/cart`)
     } catch (e) {
       console.error("[bundle] erro adicionando ao carrinho", e)
     } finally {
