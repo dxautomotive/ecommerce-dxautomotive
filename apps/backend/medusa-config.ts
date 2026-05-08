@@ -13,13 +13,10 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     },
   },
-  admin: {
-    // Serve o admin UI direto na raiz do dominio (app.dxautomotive.com.br/login),
-    // sem o prefixo /app default. APIs REST `/admin/*`, `/store/*`, `/auth/*`,
-    // `/health` continuam funcionando porque o framework prioriza as rotas
-    // registradas antes do fallback do admin UI.
-    path: "/",
-  },
+  // Admin UI continua em /app (default Medusa). O nginx na frente
+  // faz rewrite de /login, /orders, /products etc pra /app/* — assim o
+  // usuário vê URL limpa (app.dxautomotive.com.br/login) mas a API REST
+  // /admin/users/me continua respondendo JSON, não HTML do admin UI.
   modules: [
     {
       resolve: "./src/modules/atacado_leads",
